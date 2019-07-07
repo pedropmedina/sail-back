@@ -1,0 +1,34 @@
+type User {
+  _id: ID
+  name: String
+  username: String!
+  password: String!
+  image: String
+  pins: [Pin]!
+  admin: Boolean!
+}
+
+input AuthUserInput {
+  username: String!
+  password: String!
+}
+
+input UpdateUserInput {
+  name: String
+  username: String
+  password: String
+  image: String
+}
+
+extend type Query {
+  getUsers: [User]!
+  getUser(id: ID!): [User]!
+}
+
+extend type Mutation {
+  signupUser(input: AuthUserInput!): User!
+  loginUser(input: AuthUserInput!): User!
+  logoutUser(token: String): Boolean!
+  updateUser(input: UpdateUserInput!): User!
+  deleteUser(id: ID!): User!
+}
