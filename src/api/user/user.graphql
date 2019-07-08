@@ -8,6 +8,11 @@ type User {
   admin: Boolean!
 }
 
+type Auth {
+  token: String!
+  user: User
+}
+
 input AuthUserInput {
   username: String!
   password: String!
@@ -26,8 +31,8 @@ extend type Query {
 }
 
 extend type Mutation {
-  signupUser(input: AuthUserInput!): User!
-  loginUser(input: AuthUserInput!): User!
+  signupUser(input: AuthUserInput!): Auth!
+  loginUser(input: AuthUserInput!): Auth!
   logoutUser(token: String): Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(id: ID!): User!

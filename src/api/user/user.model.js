@@ -5,12 +5,16 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema(
   {
     name: String,
-    username: { type: String, required: true, unique: true },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      validate: { validator: validator.isEmail }
+    },
     password: {
       type: String,
       required: true,
-      minlength: 6,
-      validate: { validator: validator.isEmail }
+      minlength: 6
     },
     image: String,
     pins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
