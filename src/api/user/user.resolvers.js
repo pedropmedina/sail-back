@@ -15,7 +15,7 @@ const signupUser = async (_, { username, password }, { models }) => {
     if (user) return 'Username is taken!';
 
     // enctrypt password
-    const hash = bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(password, 10);
 
     // create user
     user = new models.User({ username, password: hash });
