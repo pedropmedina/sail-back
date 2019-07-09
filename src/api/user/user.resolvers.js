@@ -1,3 +1,4 @@
+const { AuthenticationError } = require('apollo-server');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -12,9 +13,9 @@ const signupUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check if username already exists
     let user = await models.User.findOne({ username }).exec();
-    if (user) return 'Username is taken!';
+    if (user) throw new AuthenticationError('User alredy registered!');
 
-    // enctrypt password
+    // enctrypt password, NOTE: implement regex to check password strength
     const hash = await bcrypt.hash(password, 10);
 
     // create user
@@ -32,7 +33,7 @@ const signupUser = async (_, { input: { username, password } }, { models }) => {
       user
     };
   } catch (error) {
-    console.error('Error while signing up user', error);
+    console.error('Error while signing up: ', error.message);
   }
 };
 
@@ -41,11 +42,11 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check for user in db
     const user = await models.User.findOne({ username }).exec();
-    if (!user) return 'Wrong credentials.';
+    if (!user) throw new AuthenticationError('Wrong credentials.');
 
     // validate password
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) return 'Wrong credentials.';
+    if (!isPasswordValid) throw new AuthenticationError('Wrong credentials.');
 
     // generate token
     const token = jwt.sign({ payload: user._id }, secret, {
@@ -58,7 +59,7 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
       user
     };
   } catch (error) {
-    return console.error('Error while logging user', error);
+    console.error('Error while logging user: ', error.message);
   }
 };
 
@@ -68,7 +69,7 @@ const logoutUser = async (_, { token }, { models }) => {
     await new models.BlacklistedToken({ token }).save();
     return true;
   } catch (error) {
-    console.error('Error while blacklisting token', error);
+    console.error('Error while blacklisting token: ', error.message);
   }
 };
 
