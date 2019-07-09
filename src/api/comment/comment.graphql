@@ -1,0 +1,27 @@
+type Comment {
+  _id: ID!
+  text: String!
+  pin: ID!
+  createdAt: String!
+}
+
+input CreateCommentInput {
+  text: String!
+  pin: ID!
+}
+
+input UpdateCommentInput {
+  _id: ID!
+  text: String!
+}
+
+extend type Query {
+  getComments: [Comment]!
+  getComment(id: ID!): Comment!
+}
+
+extend type Mutation {
+  createComment(input: CreateCommentInput!): Comment!
+  updateComment(input: UpdateCommentInput!): Comment!
+  deleteComment(id: ID!): Comment!
+}
