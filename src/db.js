@@ -5,7 +5,9 @@ const MONGODB_URI =
     ? process.env.MONGODB_URI_DEV
     : process.env.MONGODB_URI_PROD;
 
-mongoose
-  .connect(MONGODB_URI, { useNewUrlParser: true })
+const db = mongoose
+  .connect(MONGODB_URI, { useNewUrlParser: true, useCreateIndex: true })
   .then(() => console.log('db connected'))
   .catch(err => console.log('Error while connecting to db', err));
+
+module.exports = db;

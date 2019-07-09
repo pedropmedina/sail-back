@@ -9,7 +9,8 @@ const userSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      validate: { validator: validator.isEmail }
+      validate: { validator: validator.isEmail },
+      index: true
     },
     password: {
       type: String,

@@ -1,6 +1,6 @@
-const getComments = async (_, __, { Comment }) => {
+const getComments = async (_, __, { models }) => {
   try {
-    const comments = await Comment.find({})
+    const comments = await models.Comment.find({})
       .populate('Pin')
       .exec();
     return comments;
@@ -9,9 +9,9 @@ const getComments = async (_, __, { Comment }) => {
   }
 };
 
-const getComment = async (_, { id }, { Comment }) => {
+const getComment = async (_, { id }, { models }) => {
   try {
-    const comment = await Comment.findById(id)
+    const comment = await models.Comment.findById(id)
       .populate('Pin')
       .exec();
     return comment;
@@ -20,18 +20,20 @@ const getComment = async (_, { id }, { Comment }) => {
   }
 };
 
-const createComment = async (_, { input }, { Comment }) => {
+const createComment = async (_, { input }, { models }) => {
   try {
-    const comment = await new Comment(input).save();
+    const comment = await new models.Comment(input).save();
     return comment;
   } catch (error) {
     console.error('Error creating comment', error);
   }
 };
 
-const updateComment = async (_, { id, ...update }, { Comment }) => {
+const updateComment = async (_, { id, ...update }, { models }) => {
   try {
-    const comment = await Comment.findByIdAndUpdate(id, update, { new: true })
+    const comment = await models.Comment.findByIdAndUpdate(id, update, {
+      new: true
+    })
       .populate('Pin')
       .exec();
     return comment;
@@ -40,9 +42,9 @@ const updateComment = async (_, { id, ...update }, { Comment }) => {
   }
 };
 
-const deleteComment = async (_, { id }, { Comment }) => {
+const deleteComment = async (_, { id }, { models }) => {
   try {
-    const comment = await Comment.findByIdAndDelete(id).exec();
+    const comment = await models.Comment.findByIdAndDelete(id).exec();
     return comment;
   } catch (error) {
     console.error(`Error while deleting comment with id ${id}`, error);

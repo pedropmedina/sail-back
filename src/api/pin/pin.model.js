@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const pinSchema = new Schema(
   {
-    title: String,
+    title: { type: String, index: true },
     content: String,
     image: String,
     latitude: Number,
