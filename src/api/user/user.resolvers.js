@@ -8,7 +8,7 @@ const grantOwnerAccess = require('../../utils/grantOwnerAccess');
 const secret = process.env.JWT_SECRET;
 
 // sign up new user
-const signupUser = async (_, { username, password }, { models }) => {
+const signupUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check if username already exists
     let user = await models.User.findOne({ username }).exec();
@@ -27,7 +27,6 @@ const signupUser = async (_, { username, password }, { models }) => {
     });
 
     // return auth schema to the client
-    console.log({ token, user });
     return {
       token,
       user
@@ -38,7 +37,7 @@ const signupUser = async (_, { username, password }, { models }) => {
 };
 
 // login existing user
-const loginUser = async (_, { username, password }, { models }) => {
+const loginUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check for user in db
     const user = await models.User.findOne({ username }).exec();

@@ -33,7 +33,7 @@ extend type Query {
 extend type Mutation {
   signupUser(input: AuthUserInput!): Auth!
   loginUser(input: AuthUserInput!): Auth!
-  logoutUser(token: String): Boolean!
+  logoutUser(token: String!): Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(id: ID!): User!
 }
