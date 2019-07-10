@@ -2,26 +2,33 @@ type Comment {
   _id: ID!
   text: String!
   pin: ID!
+  author: User!
   createdAt: String!
 }
 
 input CreateCommentInput {
   text: String!
-  pin: ID!
+  pinId: ID!
 }
 
 input UpdateCommentInput {
-  _id: ID!
+  commentId: ID!
+  pinId: ID!
   text: String!
+}
+
+input DeleteCommentInput {
+  commentId: ID!
+  pinId: ID!
 }
 
 extend type Query {
   getComments: [Comment]!
-  getComment(id: ID!): Comment!
+  getComment(commentId: ID!): Comment!
 }
 
 extend type Mutation {
   createComment(input: CreateCommentInput!): Comment!
   updateComment(input: UpdateCommentInput!): Comment!
-  deleteComment(id: ID!): Comment!
+  deleteComment(input: DeleteCommentInput!): Comment!
 }

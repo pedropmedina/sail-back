@@ -19,7 +19,7 @@ input CreatePinInput {
 }
 
 input UpdatePinInput {
-  _id: ID!
+  pinId: ID!
   title: String
   content: String
   image: String

@@ -8,8 +8,8 @@ const getPins = async (root, args, { models }) => {
   return pins;
 };
 
-const getPin = async (_, { id }, { models }) => {
-  const pin = await models.Pin.findById(id)
+const getPin = async (_, { pinId }, { models }) => {
+  const pin = await models.Pin.findById(pinId)
     .populate('author')
     .populate('comments')
     .exec();
@@ -29,9 +29,9 @@ const createPin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
 });
 
 const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
-  const { _id, ...update } = args.input;
+  const { pinId, ...update } = args.input;
   let updatedPin = await models.Pin.findOneAndUpdate(
-    { _id, author: currentUser._id },
+    { pinId, author: currentUser._id },
     update,
     { new: true }
   )
@@ -42,9 +42,9 @@ const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
 });
 
 const deletePin = grantOwnerAccess(
-  async (_, { id }, { models, currentUser }) => {
+  async (_, { pinId }, { models, currentUser }) => {
     let deletedPin = await models.Pin.findOneAndDelete({
-      _id: id,
+      _id: pinId,
       author: currentUser._id
     })
       .populate('author')
