@@ -42,10 +42,8 @@ const createComment = grantOwnerAcces(
         { new: true }
       ).exec();
       // populate comment's fields
-      const commentAdded = await models.Comment.populate(
-        comment,
-        'pin'
-      ).populate(comment, 'author');
+      let commentAdded = await models.Comment.populate(comment, 'pin');
+      commentAdded = await models.Comment.populate(commentAdded, 'author');
       return commentAdded;
     } catch (error) {
       console.error('Error creating comment', error);
@@ -89,7 +87,7 @@ const deleteComment = grantOwnerAcces(
         .populate('pin')
         .populate('author');
       // find pin containing comment and pull comment's id from comments' array
-      await models.findByIdAndUpdate(
+      await models.Pin.findByIdAndUpdate(
         pinId,
         {
           $pull: { comments: { $in: [commentId] } }

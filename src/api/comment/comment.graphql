@@ -1,7 +1,7 @@
 type Comment {
   _id: ID!
   text: String!
-  pin: ID!
+  pin: Pin!
   author: User!
   createdAt: String!
 }

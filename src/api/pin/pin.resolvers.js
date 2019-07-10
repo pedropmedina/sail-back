@@ -31,7 +31,7 @@ const createPin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
 const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
   const { pinId, ...update } = args.input;
   let updatedPin = await models.Pin.findOneAndUpdate(
-    { pinId, author: currentUser._id },
+    { _id: pinId, author: currentUser._id },
     update,
     { new: true }
   )

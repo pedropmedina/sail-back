@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 const commentSchema = new Schema(
   {
     text: { type: String, required: true },
-    pin: { type: Schema.Types.ObjectId, ref: 'Pin', required: true }
+    pin: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
+    author: { type: Schema.Types.ObjectId, ref: 'User', required: true }
   },
   { timestamps: true }
 );

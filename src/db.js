@@ -6,7 +6,11 @@ const MONGODB_URI =
     : process.env.MONGODB_URI_PROD;
 
 const db = mongoose
-  .connect(MONGODB_URI, { useNewUrlParser: true, useCreateIndex: true })
+  .connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useFindAndModify: false
+  })
   .then(() => console.log('db connected'))
   .catch(err => console.log('Error while connecting to db', err));
 
