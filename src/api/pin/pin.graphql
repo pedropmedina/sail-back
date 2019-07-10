@@ -16,7 +16,6 @@ input CreatePinInput {
   image: String!
   latitude: Float!
   longitude: Float!
-  author: String!
 }
 
 input UpdatePinInput {

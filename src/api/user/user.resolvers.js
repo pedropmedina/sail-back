@@ -15,7 +15,11 @@ const signupUser = async (_, { input: { username, password } }, { models }) => {
     let user = await models.User.findOne({ username }).exec();
     if (user) throw new AuthenticationError('User alredy registered!');
 
-    // enctrypt password, NOTE: implement regex to check password strength
+    // enctrypt password
+    if (password.length < 6)
+      throw new AuthenticationError(
+        'Password must be at least 6 characters long!'
+      );
     const hash = await bcrypt.hash(password, 10);
 
     // create user
@@ -34,6 +38,7 @@ const signupUser = async (_, { input: { username, password } }, { models }) => {
     };
   } catch (error) {
     console.error('Error while signing up: ', error.message);
+    throw error;
   }
 };
 
@@ -60,6 +65,7 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
     };
   } catch (error) {
     console.error('Error while logging user: ', error.message);
+    throw error;
   }
 };
 
@@ -88,6 +94,7 @@ const getUser = grantOwnerAccess(async (_, { id }, { models }) => {
     return user;
   } catch (error) {
     console.error('Error while getting user', error);
+    return error;
   }
 });
 

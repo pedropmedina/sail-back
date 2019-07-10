@@ -11,6 +11,6 @@ module.exports = async (token, userModel) => {
     // return user to be set in ctx
     return currentUser;
   } catch (error) {
-    console.error('Error while getting current user');
+    console.error('Error while getting current user', error);
   }
 };

@@ -1,8 +1,7 @@
 type User {
-  _id: ID
+  _id: ID!
   name: String
   username: String!
-  password: String!
   image: String
   pins: [Pin]!
   admin: Boolean!
