@@ -34,6 +34,9 @@ const createPin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
     author: currentUser._id
   }).save();
   const pinCreated = await models.Pin.populate(newPin, 'author');
+  // push pin into current user's pins array
+  currentUser.pins.push(pinCreated._id);
+  await currentUser.save();
   pubsub.publish(PIN_CREATED, { pinCreated });
   return pinCreated;
 });

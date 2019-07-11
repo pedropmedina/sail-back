@@ -46,7 +46,12 @@ const signupUser = async (_, { input: { username, password } }, { models }) => {
 const loginUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check for user in db
-    const user = await models.User.findOne({ username }).exec();
+    const user = await models.User.findOne({ username })
+      .populate({
+        path: 'pins',
+        populate: { path: 'comments' }
+      })
+      .exec();
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
     // validate password
@@ -79,18 +84,37 @@ const logoutUser = async (_, { token }, { models }) => {
   }
 };
 
+// access current user's info
+const me = grantOwnerAccess(async (_, __, { models, currentUser }) => {
+  return await models.User.populate(currentUser, {
+    path: 'pins',
+    populate: { path: 'comments' }
+  });
+});
+
+// allow admins to access users' info
 const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
-    const users = await models.User.find({}).exec();
+    const users = await models.User.find({})
+      .populate({
+        path: 'pins',
+        populate: { path: 'comments' }
+      })
+      .exec();
     return users;
   } catch (error) {
     console.error('Error while getting users', error);
   }
 });
 
-const getUser = grantOwnerAccess(async (_, { id }, { models }) => {
+const getUser = grantAdminAccess(async (_, { userId }, { models }) => {
   try {
-    const user = await models.User.finById(id).exec();
+    const user = await models.User.findById(userId)
+      .populate({
+        path: 'pins',
+        populate: 'comments'
+      })
+      .exec();
     return user;
   } catch (error) {
     console.error('Error while getting user', error);
@@ -98,22 +122,35 @@ const getUser = grantOwnerAccess(async (_, { id }, { models }) => {
   }
 });
 
+// either current user and admin can update and delete user
 const updateUser = grantOwnerAccess(
-  async (_, { id, ...update }, { models }) => {
+  async (_, { input: { userId, ...update } }, { models }) => {
     try {
-      const user = await models.User.findByIdAndUpdate(id, update, {
+      const user = await models.User.findByIdAndUpdate(userId, update, {
         new: true
-      }).exec();
+      })
+        .populate({
+          path: 'pins',
+          populate: { path: 'comments' }
+        })
+        .exec();
       return user;
     } catch (error) {
       console.error('Error while updating user', error);
+      throw error;
     }
   }
 );
 
-const deleteUser = grantOwnerAccess(async (_, { id }, { models }) => {
+const deleteUser = grantOwnerAccess(async (_, { userId }, { models }) => {
   try {
-    const user = await models.User.findByIdAndDelete(id).exec();
+    const user = await models.User.findById(userId)
+      .populate({
+        path: 'pins',
+        populate: { path: 'comments' }
+      })
+      .exec();
+    await user.remove();
     return user;
   } catch (error) {
     console.error('Error while deleting user', error);
@@ -122,6 +159,7 @@ const deleteUser = grantOwnerAccess(async (_, { id }, { models }) => {
 
 module.exports = {
   Query: {
+    me,
     getUsers,
     getUser
   },

@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const Schema = mongoose.Schema;
 
+const Pin = require('../pin/pin.model');
+
 const userSchema = new Schema(
   {
     name: String,
@@ -29,6 +31,17 @@ const userSchema = new Schema(
 
 const blacklistedTokenSchema = new Schema({
   token: { type: String, required: true, unique: true }
+});
+
+// middleware in charge of removing corresponding pins to removed user
+// use pin.remove to trigger 'pre' hook upon removal of pin and delete all comments corresponding to each pin
+userSchema.pre('remove', async function() {
+  try {
+    const pins = await Pin.find({ author: this._id });
+    await Promise.all(pins.map(pin => pin.remove()));
+  } catch (error) {
+    console.error('Error while deleting user!');
+  }
 });
 
 module.exports = {

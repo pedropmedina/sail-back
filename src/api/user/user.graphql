@@ -18,6 +18,7 @@ input AuthUserInput {
 }
 
 input UpdateUserInput {
+  userId: String!
   name: String
   username: String
   password: String
@@ -25,8 +26,9 @@ input UpdateUserInput {
 }
 
 extend type Query {
+  me: User!
   getUsers: [User]!
-  getUser(id: ID!): [User]!
+  getUser(userId: ID!): User!
 }
 
 extend type Mutation {
@@ -34,5 +36,5 @@ extend type Mutation {
   loginUser(input: AuthUserInput!): Auth!
   logoutUser(token: String!): Boolean!
   updateUser(input: UpdateUserInput!): User!
-  deleteUser(id: ID!): User!
+  deleteUser(userId: ID!): User!
 }
