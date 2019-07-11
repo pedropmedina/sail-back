@@ -35,3 +35,9 @@ type Mutation {
   updatePin(input: UpdatePinInput!): Pin!
   deletePin(pinId: ID!): Pin!
 }
+
+type Subscription {
+  pinCreated: Pin!
+  pinUpdated: Pin!
+  pinDeleted: Pin!
+}

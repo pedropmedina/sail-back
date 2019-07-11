@@ -1,4 +1,13 @@
+const { PubSub } = require('apollo-server');
 const grantOwnerAccess = require('../../utils/grantOwnerAccess');
+
+// instantiate PubSub making asyncIterator and publish
+const pubsub = new PubSub();
+
+// subcriptions event names
+const PIN_CREATED = 'PIN_CREATED';
+const PIN_UPDATED = 'PIN_UPDATED';
+const PIN_DELETED = 'PIN_DELETED';
 
 const getPins = async (root, args, { models }) => {
   const pins = await models.Pin.find({})
@@ -24,13 +33,14 @@ const createPin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
     ...args.input,
     author: currentUser._id
   }).save();
-  const pinAdded = await models.Pin.populate(newPin, 'author');
-  return pinAdded;
+  const pinCreated = await models.Pin.populate(newPin, 'author');
+  pubsub.publish(PIN_CREATED, { pinCreated });
+  return pinCreated;
 });
 
 const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
   const { pinId, ...update } = args.input;
-  let updatedPin = await models.Pin.findOneAndUpdate(
+  let pinUpdated = await models.Pin.findOneAndUpdate(
     { _id: pinId, author: currentUser._id },
     update,
     { new: true }
@@ -38,19 +48,24 @@ const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
     .populate('author')
     .populate('comments')
     .exec();
-  return updatedPin;
+  pubsub.publish(PIN_UPDATED, { pinUpdated });
+  return pinUpdated;
 });
 
+// query pin and use remove on retuned document to trigger 'remove' hooks
+// and remove all comments related to this pin
 const deletePin = grantOwnerAccess(
   async (_, { pinId }, { models, currentUser }) => {
-    let deletedPin = await models.Pin.findOneAndDelete({
+    const pinDeleted = await models.Pin.findOne({
       _id: pinId,
       author: currentUser._id
     })
       .populate('author')
       .populate('comments')
       .exec();
-    return deletedPin;
+    await pinDeleted.remove();
+    pubsub.publish(PIN_DELETED, { pinDeleted });
+    return pinDeleted;
   }
 );
 
@@ -63,5 +78,16 @@ module.exports = {
     createPin,
     updatePin,
     deletePin
+  },
+  Subscription: {
+    pinCreated: {
+      subscribe: () => pubsub.asyncIterator(PIN_CREATED)
+    },
+    pinUpdated: {
+      subscribe: () => pubsub.asyncIterator(PIN_UPDATED)
+    },
+    pinDeleted: {
+      subscribe: () => pubsub.asyncIterator(PIN_DELETED)
+    }
   }
 };
