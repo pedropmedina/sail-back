@@ -24,6 +24,7 @@ const userSchema = new Schema(
     },
     image: String,
     pins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
+    likes: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
     admin: { type: Boolean, default: false }
   },
   { timestamps: true }

@@ -9,7 +9,7 @@ const PIN_CREATED = 'PIN_CREATED';
 const PIN_UPDATED = 'PIN_UPDATED';
 const PIN_DELETED = 'PIN_DELETED';
 
-const getPins = async (root, args, { models }) => {
+const getPins = async (_, __, { models }) => {
   const pins = await models.Pin.find({})
     .populate('author')
     .populate('comments')

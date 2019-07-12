@@ -86,10 +86,11 @@ const logoutUser = async (_, { token }, { models }) => {
 
 // access current user's info
 const me = grantOwnerAccess(async (_, __, { models, currentUser }) => {
-  return await models.User.populate(currentUser, {
-    path: 'pins',
-    populate: { path: 'comments' }
-  });
+  const opts = [
+    { path: 'pins', populate: { path: 'comments' } },
+    { path: 'likes' }
+  ];
+  return await models.User.populate(currentUser, opts);
 });
 
 // allow admins to access users' info
@@ -157,6 +158,12 @@ const deleteUser = grantOwnerAccess(async (_, { userId }, { models }) => {
   }
 });
 
+const like = grantOwnerAccess(async (_, { pinId }, { currentUser }) => {
+  currentUser.likes.push(pinId);
+  await currentUser.save();
+  return true;
+});
+
 module.exports = {
   Query: {
     me,
@@ -168,6 +175,7 @@ module.exports = {
     loginUser,
     logoutUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    like
   }
 };

@@ -4,6 +4,7 @@ type User {
   username: String!
   image: String
   pins: [Pin]!
+  likes: [Pin]!
   admin: Boolean!
 }
 
@@ -37,4 +38,5 @@ extend type Mutation {
   logoutUser(token: String!): Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(userId: ID!): User!
+  like(pinId: ID!): Boolean!
 }
