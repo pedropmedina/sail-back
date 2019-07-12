@@ -1,4 +1,11 @@
+const { PubSub } = require('apollo-server');
 const grantOwnerAcces = require('../../utils/grantOwnerAccess');
+
+const pubsub = new PubSub();
+
+const COMMENT_CREATED = 'COMMENT_CREATED';
+const COMMENT_UPDATED = 'COMMENT_UPDATED';
+const COMMENT_DELETED = 'COMMENT_DELETED';
 
 const getComments = grantOwnerAcces(async (_, __, { models }) => {
   try {
@@ -35,16 +42,24 @@ const createComment = grantOwnerAcces(
         pin: pinId,
         author: currentUser._id
       }).save();
+      // populate comment's fields
+      let commentCreated = await models.Comment.populate(comment, 'pin');
+      commentCreated = await models.Comment.populate(commentCreated, 'author');
+
       // update pin by pushing comment._id into comments' array
-      await models.Pin.findOneAndUpdate(
+      const pin = await models.Pin.findOneAndUpdate(
         { _id: pinId, author: currentUser._id },
         { $push: { comments: comment._id } },
         { new: true }
-      ).exec();
-      // populate comment's fields
-      let commentAdded = await models.Comment.populate(comment, 'pin');
-      commentAdded = await models.Comment.populate(commentAdded, 'author');
-      return commentAdded;
+      )
+        .populate('comments')
+        .populate('author')
+        .exec();
+
+      // publish updated pin
+      pubsub.publish(COMMENT_CREATED, { commentCreated: pin });
+
+      return commentCreated;
     } catch (error) {
       console.error('Error creating comment', error);
       throw error;
@@ -67,6 +82,13 @@ const updateComment = grantOwnerAcces(
         .populate('pin')
         .populate('author')
         .exec();
+
+      const pin = await models.Pin.findById(pinId)
+        .populate('comments')
+        .populate('author')
+        .exec();
+
+      pubsub.publish(COMMENT_UPDATED, { commentUpdated: pin });
       return comment;
     } catch (error) {
       console.error('Error while updating comment: ', error);
@@ -87,13 +109,14 @@ const deleteComment = grantOwnerAcces(
         .populate('pin')
         .populate('author');
       // find pin containing comment and pull comment's id from comments' array
-      await models.Pin.findByIdAndUpdate(
+      const pin = await models.Pin.findByIdAndUpdate(
         pinId,
         {
           $pull: { comments: { $in: [commentId] } }
         },
         { new: true }
       );
+      pubsub.publish(COMMENT_DELETED, { commentDeleted: pin });
       return comment;
     } catch (error) {
       console.error(`Error while deleting comment with id ${commentId}`, error);
@@ -111,5 +134,16 @@ module.exports = {
     createComment,
     updateComment,
     deleteComment
+  },
+  Subscription: {
+    commentCreated: {
+      subscribe: () => pubsub.asyncIterator(COMMENT_CREATED)
+    },
+    commentUpdated: {
+      subscribe: () => pubsub.asyncIterator(COMMENT_UPDATED)
+    },
+    commentDeleted: {
+      subscribe: () => pubsub.asyncIterator(COMMENT_DELETED)
+    }
   }
 };

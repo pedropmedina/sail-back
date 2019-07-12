@@ -32,3 +32,9 @@ extend type Mutation {
   updateComment(input: UpdateCommentInput!): Comment!
   deleteComment(input: DeleteCommentInput!): Comment!
 }
+
+extend type Subscription {
+  commentCreated: Pin!
+  commentUpdated: Pin!
+  commentDeleted: Pin!
+}
