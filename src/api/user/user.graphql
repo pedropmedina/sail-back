@@ -1,11 +1,22 @@
 type User {
   _id: ID!
-  name: String
   username: String!
+  name: String
   image: String
+  address: Address!
+  friends: [User]!
+  plans: [Plan]!
   pins: [Pin]!
-  likes: [Pin]!
+  likedPins: [Pin]!
   admin: Boolean!
+}
+
+type Address {
+  street1: String
+  street2: String
+  city: String
+  state: String
+  zip: String
 }
 
 type Auth {
@@ -38,5 +49,6 @@ extend type Mutation {
   logoutUser(token: String!): Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(userId: ID!): User!
-  like(pinId: ID!): Boolean!
+  likePin(pinId: ID!): Boolean!
+  addFriend(userID: ID!): Boolean!
 }

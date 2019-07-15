@@ -6,7 +6,6 @@ const Pin = require('../pin/pin.model');
 
 const userSchema = new Schema(
   {
-    name: String,
     username: {
       type: String,
       required: true,
@@ -22,9 +21,19 @@ const userSchema = new Schema(
       required: true,
       minlength: 6
     },
+    name: String,
+    address: {
+      street1: String,
+      street2: String,
+      city: String,
+      state: String,
+      zip: String
+    },
     image: String,
+    plans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
     pins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
-    likes: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
+    likedPins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
+    friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     admin: { type: Boolean, default: false }
   },
   { timestamps: true }

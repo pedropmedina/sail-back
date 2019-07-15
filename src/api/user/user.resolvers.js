@@ -47,10 +47,13 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check for user in db
     const user = await models.User.findOne({ username })
+      .populate('plans')
       .populate({
         path: 'pins',
         populate: { path: 'comments' }
       })
+      .populate('likedPins')
+      .populate('friends')
       .exec();
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
@@ -87,8 +90,10 @@ const logoutUser = async (_, { token }, { models }) => {
 // access current user's info
 const me = grantOwnerAccess(async (_, __, { models, currentUser }) => {
   const opts = [
+    { path: 'plans' },
     { path: 'pins', populate: { path: 'comments' } },
-    { path: 'likes' }
+    { path: 'likedPins' },
+    { path: 'friends' }
   ];
   return await models.User.populate(currentUser, opts);
 });
@@ -97,10 +102,13 @@ const me = grantOwnerAccess(async (_, __, { models, currentUser }) => {
 const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
     const users = await models.User.find({})
+      .populate('plans')
       .populate({
         path: 'pins',
         populate: { path: 'comments' }
       })
+      .populate('likedpins')
+      .populate('friends')
       .exec();
     return users;
   } catch (error) {
@@ -111,10 +119,13 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
 const getUser = grantAdminAccess(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
+      .populate('plans')
       .populate({
         path: 'pins',
-        populate: 'comments'
+        populate: { path: 'comments' }
       })
+      .populate('likedpins')
+      .populate('friends')
       .exec();
     return user;
   } catch (error) {
@@ -130,10 +141,13 @@ const updateUser = grantOwnerAccess(
       const user = await models.User.findByIdAndUpdate(userId, update, {
         new: true
       })
+        .populate('plans')
         .populate({
           path: 'pins',
           populate: { path: 'comments' }
         })
+        .populate('likedpins')
+        .populate('friends')
         .exec();
       return user;
     } catch (error) {
@@ -146,10 +160,13 @@ const updateUser = grantOwnerAccess(
 const deleteUser = grantOwnerAccess(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
+      .populate('plans')
       .populate({
         path: 'pins',
         populate: { path: 'comments' }
       })
+      .populate('likedpins')
+      .populate('friends')
       .exec();
     await user.remove();
     return user;
@@ -158,9 +175,15 @@ const deleteUser = grantOwnerAccess(async (_, { userId }, { models }) => {
   }
 });
 
-const like = grantOwnerAccess(async (_, { pinId }, { currentUser }) => {
+const likePin = grantOwnerAccess(async (_, { pinId }, { currentUser }) => {
   currentUser.likes.push(pinId);
   await currentUser.save();
+  return true;
+});
+
+const addFriend = grantOwnerAccess(async (_, { userId }, { currentUser }) => {
+  await currentUser.friends.push(userId);
+  currentUser.save();
   return true;
 });
 
@@ -176,6 +199,7 @@ module.exports = {
     logoutUser,
     updateUser,
     deleteUser,
-    like
+    likePin,
+    addFriend
   }
 };
