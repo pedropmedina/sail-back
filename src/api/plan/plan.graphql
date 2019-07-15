@@ -1,0 +1,37 @@
+type Plan {
+  _id: ID!
+  title: String!
+  description: String!
+  location: Pin!
+  date: String!
+  invites: [Invite]!
+  conversations: Conversation
+  media: [String]!
+  private: Boolean!
+  author: User!
+}
+
+input CreatePlanInput {
+  title: String!
+  description: String!
+  location: ID!
+  date: String!
+  invites: [ID!]!
+}
+
+input UpdatePlanInput {
+  _id: ID!
+  date: String!
+  invites: [ID]
+  media: [String]
+  private: Boolean
+}
+
+extend type Query {
+  getPlan(planId: ID!): Pin!
+}
+extend type Mutation {
+  createPlan(input: CreatePlanInput!): Plan!
+  updatePlan(input: UpdatePlanInput!): Plan!
+  deletePlan(planId: ID!): Boolean!
+}

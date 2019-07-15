@@ -2,6 +2,7 @@ const { AuthenticationError } = require('apollo-server');
 const merge = require('lodash/merge');
 
 // api
+const plan = require('./plan');
 const pin = require('./pin');
 const comment = require('./comment');
 const user = require('./user');
@@ -13,8 +14,16 @@ const loaders = require('./loaders');
 const getCurrentUser = require('../utils/getCurrentUser');
 
 module.exports = {
-  typeDefs: [pin.typeDefs, comment.typeDefs, user.typeDefs].join(' '),
-  resolvers: merge({}, pin.resolvers, comment.resolvers, user.resolvers),
+  typeDefs: [plan.typeDefs, pin.typeDefs, comment.typeDefs, user.typeDefs].join(
+    ' '
+  ),
+  resolvers: merge(
+    {},
+    plan.resolvers,
+    pin.resolvers,
+    comment.resolvers,
+    user.resolvers
+  ),
   subscriptions: {
     onConnect: async connectionParams => {
       const { users } = loaders();
@@ -48,6 +57,7 @@ module.exports = {
     return {
       currentUser,
       models: {
+        Plan: plan.model,
         Pin: pin.model,
         Comment: comment.model,
         User: user.model.User,
