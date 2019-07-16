@@ -16,7 +16,7 @@ input CreatePlanInput {
   description: String!
   location: ID!
   date: String!
-  invites: [ID!]!
+  invites: [ID]!
 }
 
 input UpdatePlanInput {
