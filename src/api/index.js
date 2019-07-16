@@ -5,6 +5,7 @@ const merge = require('lodash/merge');
 const plan = require('./plan');
 const conversation = require('./conversation');
 const message = require('./message');
+const invite = require('./invite');
 const pin = require('./pin');
 const comment = require('./comment');
 const user = require('./user');
@@ -20,6 +21,7 @@ module.exports = {
     plan.typeDefs,
     conversation.typeDefs,
     message.typeDefs,
+    invite.typeDefs,
     pin.typeDefs,
     comment.typeDefs,
     user.typeDefs
@@ -29,6 +31,7 @@ module.exports = {
     plan.resolvers,
     conversation.resolvers,
     message.resolvers,
+    invite.resolvers,
     pin.resolvers,
     comment.resolvers,
     user.resolvers
@@ -69,6 +72,7 @@ module.exports = {
         Plan: plan.model,
         Conversation: conversation.model,
         Message: message.model,
+        Invite: invite.model,
         Pin: pin.model,
         Comment: comment.model,
         User: user.model.User,
