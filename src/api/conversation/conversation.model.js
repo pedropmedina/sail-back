@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const { User } = require('../user/user.model');
+const Message = require('../message/message.model');
 
 const conversationSchema = new Schema(
   {
@@ -32,7 +33,8 @@ conversationSchema.pre('save', function(next) {
 });
 
 conversationSchema.pre('remove', async function() {
-  // remove messages corresponding to conversation
+  // delete messages corresponding to conversation
+  return await Message.deleteMany({ conversation: this._id }).exec();
 });
 
 module.exports = Conversation;
