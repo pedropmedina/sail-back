@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 
 // utils
 const grantAdminAccess = require('../../utils/grantAdminAccess');
-const grantOwnerAccess = require('../../utils/grantOwnerAccess');
+const authorize = require('../../utils/authorize');
 
 const secret = process.env.JWT_SECRET;
 
@@ -88,7 +88,7 @@ const logoutUser = async (_, { token }, { models }) => {
 };
 
 // access current user's info
-const me = grantOwnerAccess(async (_, __, { models, currentUser }) => {
+const me = authorize(async (_, __, { models, currentUser }) => {
   const opts = [
     { path: 'plans' },
     { path: 'pins', populate: { path: 'comments' } },
@@ -135,7 +135,7 @@ const getUser = grantAdminAccess(async (_, { userId }, { models }) => {
 });
 
 // either current user and admin can update and delete user
-const updateUser = grantOwnerAccess(
+const updateUser = authorize(
   async (_, { input: { userId, ...update } }, { models }) => {
     try {
       const user = await models.User.findByIdAndUpdate(userId, update, {
@@ -157,7 +157,7 @@ const updateUser = grantOwnerAccess(
   }
 );
 
-const deleteUser = grantOwnerAccess(async (_, { userId }, { models }) => {
+const deleteUser = authorize(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
       .populate('plans')
@@ -175,13 +175,13 @@ const deleteUser = grantOwnerAccess(async (_, { userId }, { models }) => {
   }
 });
 
-const likePin = grantOwnerAccess(async (_, { pinId }, { currentUser }) => {
+const likePin = authorize(async (_, { pinId }, { currentUser }) => {
   currentUser.likes.push(pinId);
   await currentUser.save();
   return true;
 });
 
-const addFriend = grantOwnerAccess(async (_, { userId }, { currentUser }) => {
+const addFriend = authorize(async (_, { userId }, { currentUser }) => {
   await currentUser.friends.push(userId);
   currentUser.save();
   return true;

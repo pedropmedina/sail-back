@@ -5,7 +5,7 @@ type Plan {
   location: Pin!
   date: String!
   invites: [Invite]!
-  conversations: Conversation
+  chat: Conversation
   media: [String]!
   private: Boolean!
   author: User!
@@ -21,7 +21,6 @@ input CreatePlanInput {
 
 input UpdatePlanInput {
   _id: ID!
-  date: String!
   invites: [ID]
   media: [String]
   private: Boolean

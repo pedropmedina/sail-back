@@ -1,5 +1,5 @@
 type User {
-  _id: ID!
+  email: String!
   username: String!
   name: String
   image: String
@@ -24,8 +24,13 @@ type Auth {
   user: User!
 }
 
-input AuthUserInput {
+input LoginUserInput {
   username: String!
+  password: String!
+}
+
+input SignupUserInput {
+  email: String!
   password: String!
 }
 
@@ -44,8 +49,8 @@ extend type Query {
 }
 
 extend type Mutation {
-  signupUser(input: AuthUserInput!): Auth!
-  loginUser(input: AuthUserInput!): Auth!
+  signupUser(input: SignupUserInput!): Auth!
+  loginUser(input: LoginUserInput!): Auth!
   logoutUser(token: String!): Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(userId: ID!): User!

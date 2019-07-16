@@ -1,5 +1,5 @@
 const { PubSub } = require('apollo-server');
-const grantOwnerAccess = require('../../utils/grantOwnerAccess');
+const authorize = require('../../utils/authorize');
 
 // instantiate PubSub making asyncIterator and publish
 const pubsub = new PubSub();
@@ -28,7 +28,7 @@ const getPin = async (_, { pinId }, { models }) => {
 // two things to have in mind when creating a pin:
 // 1 - the author is the same user found in ctx.
 // 2 - comments don't have to be populated as there's no comments pointed to this newly created pin yet
-const createPin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
+const createPin = authorize(async (_, args, { models, currentUser }) => {
   const newPin = await new models.Pin({
     ...args.input,
     author: currentUser._id
@@ -41,7 +41,7 @@ const createPin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
   return pinCreated;
 });
 
-const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
+const updatePin = authorize(async (_, args, { models, currentUser }) => {
   const { pinId, ...update } = args.input;
   let pinUpdated = await models.Pin.findOneAndUpdate(
     { _id: pinId, author: currentUser._id },
@@ -57,20 +57,18 @@ const updatePin = grantOwnerAccess(async (_, args, { models, currentUser }) => {
 
 // query pin and use remove on retuned document to trigger 'remove' hooks
 // and remove all comments related to this pin
-const deletePin = grantOwnerAccess(
-  async (_, { pinId }, { models, currentUser }) => {
-    const pinDeleted = await models.Pin.findOne({
-      _id: pinId,
-      author: currentUser._id
-    })
-      .populate('author')
-      .populate('comments')
-      .exec();
-    await pinDeleted.remove();
-    pubsub.publish(PIN_DELETED, { pinDeleted });
-    return pinDeleted;
-  }
-);
+const deletePin = authorize(async (_, { pinId }, { models, currentUser }) => {
+  const pinDeleted = await models.Pin.findOne({
+    _id: pinId,
+    author: currentUser._id
+  })
+    .populate('author')
+    .populate('comments')
+    .exec();
+  await pinDeleted.remove();
+  pubsub.publish(PIN_DELETED, { pinDeleted });
+  return pinDeleted;
+});
 
 module.exports = {
   Query: {

@@ -1,5 +1,5 @@
 const { PubSub } = require('apollo-server');
-const grantOwnerAcces = require('../../utils/grantOwnerAccess');
+const grantOwnerAcces = require('../../utils/authorize');
 
 const pubsub = new PubSub();
 
