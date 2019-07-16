@@ -1,0 +1,21 @@
+type Message {
+  _id: ID!
+  conversation: Conversation!
+  content: String!
+  author: User!
+}
+
+input CreateMessageInput {
+  conversation: ID!
+  content: String!
+}
+
+extend type Query {
+  getMessages: [Messages]!
+  getMessage(messageId: ID!): Message!
+}
+
+extend type Mutation {
+  createMessage(input: CreateMessageInput!): Message!
+  deleteMessage(messageId: ID!): Boolean!
+}

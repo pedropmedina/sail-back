@@ -4,6 +4,7 @@ const merge = require('lodash/merge');
 // api
 const plan = require('./plan');
 const conversation = require('./conversation');
+const message = require('./message');
 const pin = require('./pin');
 const comment = require('./comment');
 const user = require('./user');
@@ -17,15 +18,17 @@ const getCurrentUser = require('../utils/getCurrentUser');
 module.exports = {
   typeDefs: [
     plan.typeDefs,
+    conversation.typeDefs,
+    message.typeDefs,
     pin.typeDefs,
     comment.typeDefs,
-    user.typeDefs,
-    conversation.typeDefs
+    user.typeDefs
   ].join(' '),
   resolvers: merge(
     {},
     plan.resolvers,
     conversation.resolvers,
+    message.resolvers,
     pin.resolvers,
     comment.resolvers,
     user.resolvers
@@ -65,6 +68,7 @@ module.exports = {
       models: {
         Plan: plan.model,
         Conversation: conversation.model,
+        Message: message.model,
         Pin: pin.model,
         Comment: comment.model,
         User: user.model.User,
