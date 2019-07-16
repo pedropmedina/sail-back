@@ -6,6 +6,7 @@ const STATUSES = ['PENDING', 'ACCEPTED', 'DENIED'];
 const inviteSchema = new Schema(
   {
     plan: { type: Schema.Types.ObjectId, ref: 'Plan', required: true },
+    to: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     status: { type: String, enum: STATUSES, default: 'PENDING' },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true }
   },
