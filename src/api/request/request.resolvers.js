@@ -26,10 +26,20 @@ const getRequest = authorize(async (_, { requestId }, { models }) => {
 const createRequest = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
+      // instantiate request model and save
       const request = await new models.Request({
         ...input,
         author: currentUser._id
       }).save();
+      // push request in author's sentRequests array
+      currentUser.sentRequests.push(request._id);
+      await currentUser.save();
+      // find users to whom request has been sent and
+      // push requst into their receivedRequest's array
+      await models.User.updateMany(
+        { _id: { $in: request.to } },
+        { $push: { receivedRequests: request._id } }
+      );
       return await models.Request().populate(request, 'author');
     } catch (error) {
       console.error('Error while creating invite ', error);
@@ -53,14 +63,28 @@ const updateRequest = authorize(
   }
 );
 
-const deleteRequest = authorize(async (_, { requestId }, { models }) => {
-  try {
-    return await models.Request.findByIdAndDelete(requestId).exec();
-  } catch (error) {
-    console.error('Error while deleting invite ', error);
-    throw error;
+const deleteRequest = authorize(
+  async (_, { requestId }, { models, currentUser }) => {
+    try {
+      const request = await models.Request.findOneAndDelete({
+        _id: requestId,
+        author: currentUser._id
+      }).exec();
+      // pull request's id from users document
+      await currentUser
+        .updateOne({ $pull: { sentRequests: request._id } })
+        .exec();
+      await models.User.updateMany(
+        { receivedRequests: { $in: [request._id] } },
+        { $pull: { receivedRequest: request._id } }
+      ).exec();
+      return true;
+    } catch (error) {
+      console.error('Error while deleting invite ', error);
+      throw error;
+    }
   }
-});
+);
 
 module.exports = {
   Query: {

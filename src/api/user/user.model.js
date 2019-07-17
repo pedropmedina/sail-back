@@ -36,6 +36,8 @@ const userSchema = new Schema(
     pins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
     likedPins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    sentRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
+    receivedRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
     admin: { type: Boolean, default: false }
   },
   { timestamps: true }

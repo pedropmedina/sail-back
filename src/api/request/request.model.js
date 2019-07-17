@@ -6,7 +6,7 @@ const REQUEST_TYPE = ['FRIEND', 'INVITE'];
 
 const requestSchema = new Schema(
   {
-    to: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    to: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
     status: { type: String, enum: STATUSES, default: 'PENDING' },
     requestType: { type: String, enum: REQUEST_TYPE },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },

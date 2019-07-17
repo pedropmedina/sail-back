@@ -11,7 +11,7 @@ enum REQUEST_TYPE {
 
 interface Request {
   _id: ID!
-  to: User!
+  to: [ User! ]!
   status: STATUSES = PENDING
   requestType: REQUEST_TYPE
   author: User!
@@ -19,7 +19,7 @@ interface Request {
 
 type FriendRequest implements Request {
   _id: ID!
-  to: User!
+  to: [ User! ]!
   status: STATUSES
   requestType: REQUEST_TYPE
   author: User!
@@ -27,7 +27,7 @@ type FriendRequest implements Request {
 
 type InviteRequest implements Request {
   _id: ID!
-  to: User!
+  to: [ User! ]!
   status: STATUSES
   requestType: REQUEST_TYPE
   author: User!

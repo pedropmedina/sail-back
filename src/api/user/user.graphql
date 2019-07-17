@@ -3,11 +3,13 @@ type User {
   username: String!
   name: String
   image: String
-  address: Address!
+  address: Address
   friends: [User]!
   plans: [Plan]!
   pins: [Pin]!
   likedPins: [Pin]!
+  sentRequests: [Request]!
+  receivedRequests: [Request]!
   admin: Boolean!
 }
 
