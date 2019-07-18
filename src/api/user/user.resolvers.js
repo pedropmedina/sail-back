@@ -9,10 +9,10 @@ const authorize = require('../../utils/authorize');
 const secret = process.env.JWT_SECRET;
 
 // sign up new user
-const signupUser = async (_, { input: { username, password } }, { models }) => {
+const signupUser = async (_, { input: { email, password } }, { models }) => {
   try {
-    // check if username already exists
-    let user = await models.User.findOne({ username }).exec();
+    // check if email already exists
+    let user = await models.User.findOne({ email }).exec();
     if (user) throw new AuthenticationError('User alredy registered!');
 
     // enctrypt password
@@ -23,7 +23,7 @@ const signupUser = async (_, { input: { username, password } }, { models }) => {
     const hash = await bcrypt.hash(password, 10);
 
     // create user
-    user = new models.User({ username, password: hash });
+    user = new models.User({ email, password: hash });
     await user.save();
 
     // generate token to be sent to the user
