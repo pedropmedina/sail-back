@@ -11,7 +11,7 @@ input CreateMessageInput {
 }
 
 extend type Query {
-  getMessages: [Messages]!
+  getMessages: [Message]!
   getMessage(messageId: ID!): Message!
 }
 

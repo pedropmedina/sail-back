@@ -1,31 +1,30 @@
 type Conversation {
-    _id: ID!
-    participants: [User!]!
-    messages: [Message]!
-    messagesKeyedByUsername: [Message]!
-    author: User!
+  _id: ID!
+  participants: [User!]!
+  messages: [Message]!
+  messagesKeyedByUsername: [Message]!
+  author: User!
 }
 
 input CreateConversationInput {
-    participants: [ID!]!
-    messages: [ID]!
-    author: User!
+  participants: [ID!]!
+  messages: [ID]!
+  author: ID!
 }
 
 input PullMessageInput {
-    conversationId: ID!
-    messageId: ID!
+  conversationId: ID!
+  messageId: ID!
 }
 
-
 extend type Query {
-    getConversations: [Conversation]!
-    getConversation(conversationId: ID!): Conversation!
+  getConversations: [Conversation]!
+  getConversation(conversationId: ID!): Conversation!
 }
 
 extend type Mutation {
-    createConversation(input: CreateConversationInput!): Conversation!
-    deleteConversation: (conversationId: ID!): Boolean!
-    emptyMessages(conversationId: ID!): Boolean!
-    pullMessage(input: PullMessageInput!): Boolean!
+  createConversation(input: CreateConversationInput!): Conversation!
+  deleteConversation(conversationId: ID!): Boolean!
+  emptyMessages(conversationId: ID!): Boolean!
+  pullMessage(input: PullMessageInput!): Boolean!
 }

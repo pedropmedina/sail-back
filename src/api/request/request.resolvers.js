@@ -106,7 +106,9 @@ module.exports = {
         default:
           return null;
       }
-    },
+    }
+  },
+  InviteRequest: {
     plan: async ({ plan, requestType }, _, { models }) => {
       if (requestType === 'INVITE') {
         return await models.Plan.findById(plan).exec();
