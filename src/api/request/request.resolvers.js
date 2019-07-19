@@ -1,3 +1,4 @@
+const { ApolloError } = require('apollo-server');
 const authorize = require('../../utils/authorize');
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 
@@ -40,7 +41,8 @@ const createRequest = authorize(
         { _id: { $in: request.to } },
         { $push: { receivedRequests: request._id } }
       );
-      return await models.Request().populate(request, 'author');
+      // return request with populated author
+      return await models.Request.populate(request, 'author');
     } catch (error) {
       console.error('Error while creating invite ', error);
       throw error;
@@ -70,19 +72,39 @@ const deleteRequest = authorize(
         _id: requestId,
         author: currentUser._id
       }).exec();
-      // pull request's id from users document
+      // pull request's id from request's owner sentRequest's array
       await currentUser
         .updateOne({ $pull: { sentRequests: request._id } })
         .exec();
+      // pull request from users to whom request was sent to
       await models.User.updateMany(
         { receivedRequests: { $in: [request._id] } },
-        { $pull: { receivedRequest: request._id } }
+        { $pull: { receivedRequests: request._id } }
       ).exec();
       return true;
     } catch (error) {
       console.error('Error while deleting invite ', error);
       throw error;
     }
+  }
+);
+
+const acceptFriendRequest = authorize(
+  async (_, { requestId }, { models, currentUser }) => {
+    const request = await models.Request.findById(requestId).exec();
+    const { to, status, requestType, author } = request;
+    // make sure the request was accepted and is of type friend
+    if (!(status === 'ACCEPTED' && requestType === 'FRIEND')) {
+      throw new ApolloError('Incorrect request status and/or type!');
+    }
+    // update friends array for current user's accepting request
+    currentUser.friends = [...currentUser.friends, author];
+    // update friends array for the author of the request
+    await models.User.findByIdAndUpdate(author, {
+      $push: { friends: to }
+    }).exec();
+    await currentUser.save();
+    return true;
   }
 );
 
@@ -94,7 +116,8 @@ module.exports = {
   Mutation: {
     createRequest,
     updateRequest,
-    deleteRequest
+    deleteRequest,
+    acceptFriendRequest
   },
   Request: {
     __resolveType({ requestType }) {

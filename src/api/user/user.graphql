@@ -1,6 +1,6 @@
 type User {
   email: String!
-  username: String
+  username: String!
   name: String
   image: String
   address: Address
@@ -57,5 +57,4 @@ extend type Mutation {
   updateUser(input: UpdateUserInput!): User!
   deleteUser(userId: ID!): User!
   likePin(pinId: ID!): Boolean!
-  addFriend(userId: ID!): Boolean!
 }

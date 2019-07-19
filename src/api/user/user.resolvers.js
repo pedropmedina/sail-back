@@ -181,11 +181,7 @@ const likePin = authorize(async (_, { pinId }, { currentUser }) => {
   return true;
 });
 
-const addFriend = authorize(async (_, { userId }, { currentUser }) => {
-  await currentUser.friends.push(userId);
-  currentUser.save();
-  return true;
-});
+
 
 module.exports = {
   Query: {
@@ -200,6 +196,5 @@ module.exports = {
     updateUser,
     deleteUser,
     likePin,
-    addFriend
   }
 };

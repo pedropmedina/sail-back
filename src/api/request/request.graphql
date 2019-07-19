@@ -11,39 +11,39 @@ enum REQUEST_TYPE {
 
 interface Request {
   _id: ID!
-  to: [User!]!
-  status: STATUSES
-  requestType: REQUEST_TYPE
+  to: [ID!]
+  status: STATUSES!
+  requestType: REQUEST_TYPE!
   author: User!
 }
 
 type FriendRequest implements Request {
   _id: ID!
-  to: [User!]!
-  status: STATUSES
-  requestType: REQUEST_TYPE
+  to: User!
+  status: STATUSES!
+  requestType: REQUEST_TYPE!
   author: User!
 }
 
 type InviteRequest implements Request {
   _id: ID!
   to: [User!]!
-  status: STATUSES
-  requestType: REQUEST_TYPE
+  status: STATUSES!
+  requestType: REQUEST_TYPE!
   author: User!
   plan: Plan!
 }
 
 input CreateRequest {
-  to: ID!
-  status: STATUSES
-  requestType: REQUEST_TYPE
+  to: [ID!]
+  status: STATUSES = PENDING
+  requestType: REQUEST_TYPE!
   plan: ID
 }
 
 input UpdateRequestInput {
   requestId: ID!
-  status: STATUSES
+  status: STATUSES!
 }
 
 extend type Query {
@@ -55,4 +55,5 @@ extend type Mutation {
   createRequest(input: CreateRequest!): Request!
   updateRequest(input: UpdateRequestInput!): Request!
   deleteRequest(requestId: ID!): Boolean!
+  acceptFriendRequest(requestId: ID!): Boolean!
 }
