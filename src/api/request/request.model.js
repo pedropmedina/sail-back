@@ -8,7 +8,7 @@ const requestSchema = new Schema(
   {
     to: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     status: { type: String, enum: STATUSES, default: 'PENDING' },
-    requestType: { type: String, enum: REQUEST_TYPE },
+    reqType: { type: String, enum: REQUEST_TYPE },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     plan: { type: Schema.Types.ObjectId, ref: 'Plan' }
   },

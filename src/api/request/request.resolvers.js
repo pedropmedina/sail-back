@@ -6,14 +6,14 @@ const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
   return userDoc.receivedRequests.some(
     req =>
       req.author.toString() === currentUserId.toString() &&
-      req.requestType === reqType &&
+      req.reqType === reqType &&
       (cb && typeof cb === 'function' && cb(req))
   );
 };
 
 const _hasSentReq = (userDoc, toUserId, reqType) => {
   return userDoc.sentRequests.some(
-    req => req.to.toString() === toUserId && req.requestType === reqType
+    req => req.to.toString() === toUserId && req.reqType === reqType
   );
 };
 
@@ -107,7 +107,7 @@ const getRequest = authorize(async (_, { requestId }, { models }) => {
 const createRequest = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
-      switch (input.requestType) {
+      switch (input.reqType) {
         case 'FRIEND':
           await _checkForExistingFriendReq(input, currentUser, models);
           break;
@@ -119,22 +119,21 @@ const createRequest = authorize(
       }
 
       // instantiate request model and save
-      const request = await new models.Request({
+      const req = await new models.Request({
         ...input,
         author: currentUser._id
       }).save();
-      // push request in author's sentRequests array
-      currentUser.sentRequests.push(request._id);
+      // push req in author's sentRequests array
+      currentUser.sentRequests.push(req._id);
       await currentUser.save();
-      // find users to whom request has been sent and
-      // push requst into their receivedRequest's array
-      await models.User.updateMany(
-        { _id: { $in: request.to } },
-        { $push: { receivedRequests: request._id } }
-      );
-      // return request with populated author
+      // find users to whom req has been sent and
+      // push request into their receivedRequest's array
+      await models.User.findByIdAndUpdate(req.to, {
+        $push: { receivedRequests: req._id }
+      });
+      // return req with populated author
       const populatePaths = [{ path: 'author' }, { path: 'to' }];
-      return await models.Request.populate(request, populatePaths);
+      return await models.Request.populate(req, populatePaths);
     } catch (error) {
       console.error('Error while creating invite ', error);
       throw error;
@@ -143,13 +142,31 @@ const createRequest = authorize(
 );
 
 const updateRequest = authorize(
-  async (_, { input: { requestId, ...update } }, { models }) => {
+  async (_, { input: { reqId, status } }, { models, currentUser }) => {
     try {
-      return await models.Request.findByIdAndUpdate(requestId, update, {
-        new: true
-      })
+      // make sure that status has changed to ACCEPTED or DENIED
+      if (status === 'PENDING') {
+        throw new ApolloError("Status hasn't changed!");
+      }
+      // find the request that needs to be updated
+      const req = await models.Request.findById(reqId)
         .populate('author')
         .exec();
+      // pull request from receivedRequest array and
+      // add to friends or confirmedInvites array based on reqType
+      if (req.status === 'ACCEPTED') {
+        if (req.reqType === 'FRIEND') {
+          if (currentUser._id.toString() === req.to.toString()) {
+            req.status = status;
+            currentUser.friends = [...currentUser.friends, req.author];
+            currentUser.receivedRequests = currentUser.receivedRequests.filter(
+              req => req.toString() !== reqId.toString()
+            );
+            await req.save();
+          }
+        }
+      }
+      return req;
     } catch (error) {
       console.error('Error while updating invite ', error);
       throw error;
@@ -158,54 +175,31 @@ const updateRequest = authorize(
 );
 
 const deleteRequest = authorize(
-  async (_, { requestId }, { models, currentUser }) => {
+  async (_, { reqId }, { models, currentUser }) => {
     try {
-      const request = await models.Request.findOneAndDelete({
-        _id: requestId,
-        author: currentUser._id
+      // delete the request if currenUser is author and status is not PENDING
+      const req = await models.Request.findOneAndDelete({
+        _id: reqId,
+        author: currentUser._id,
+        status: { $ne: 'PENDING' }
       }).exec();
+
       // pull request's id from request's owner sentRequest's array
-      await currentUser
-        .updateOne({ $pull: { sentRequests: request._id } })
-        .exec();
-      // pull request from users to whom request was sent to
-      await models.User.updateMany(
-        { receivedRequests: { $in: [request._id] } },
-        { $pull: { receivedRequests: request._id } }
-      ).exec();
+      if (req.status === 'ACCEPTED') {
+        if (req.reqType === 'FRIEND') {
+          await currentUser
+            .updateOne({
+              $pull: { sentRequests: req._id },
+              $push: { friends: req.to }
+            })
+            .exec();
+        }
+      }
       return true;
     } catch (error) {
       console.error('Error while deleting invite ', error);
       throw error;
     }
-  }
-);
-
-const acceptFriendRequest = authorize(
-  async (_, { requestId }, { models, currentUser }) => {
-    const request = await models.Request.findById(requestId).exec();
-    // update request status and persist changes
-    request.status = 'ACCEPTED';
-    await request.save();
-    const { to, status, requestType, author } = request;
-    // make sure the request was accepted and is of type friend
-    if (!(status === 'ACCEPTED' && requestType === 'FRIEND')) {
-      throw new ApolloError('Incorrect request status and/or type!');
-    }
-    // update friends array for current user's accepting request and
-    // remove request from receivedRequests array
-    currentUser.friends = [...currentUser.friends, author];
-    currentUser.receivedRequests = currentUser.receivedRequests.filter(
-      req => req.toString() !== requestId.toString()
-    );
-    // update friends array for the author of the request and
-    // pull the request from sentRequests arrray
-    await models.User.findByIdAndUpdate(author, {
-      $push: { friends: to },
-      $pull: { sentRequests: requestId }
-    }).exec();
-    await currentUser.save();
-    return true;
   }
 );
 
@@ -218,11 +212,10 @@ module.exports = {
     createRequest,
     updateRequest,
     deleteRequest,
-    acceptFriendRequest
   },
   Request: {
-    __resolveType({ requestType }) {
-      switch (requestType) {
+    __resolveType({ reqType }) {
+      switch (reqType) {
         case 'INVITE':
           return 'InviteRequest';
         case 'FRIEND':
@@ -233,8 +226,8 @@ module.exports = {
     }
   },
   InviteRequest: {
-    plan: async ({ plan, requestType }, _, { models }) => {
-      if (requestType === 'INVITE') {
+    plan: async ({ plan, reqType }, _, { models }) => {
+      if (reqType === 'INVITE') {
         return await models.Plan.findById(plan).exec();
       }
     }

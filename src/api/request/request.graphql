@@ -13,7 +13,7 @@ interface Request {
   _id: ID!
   to: User!
   status: STATUSES!
-  requestType: REQUEST_TYPE!
+  reqType: REQUEST_TYPE!
   author: User!
 }
 
@@ -21,7 +21,7 @@ type FriendRequest implements Request {
   _id: ID!
   to: User!
   status: STATUSES!
-  requestType: REQUEST_TYPE!
+  reqType: REQUEST_TYPE!
   author: User!
 }
 
@@ -29,7 +29,7 @@ type InviteRequest implements Request {
   _id: ID!
   to: User!
   status: STATUSES!
-  requestType: REQUEST_TYPE!
+  reqType: REQUEST_TYPE!
   author: User!
   plan: Plan!
 }
@@ -37,23 +37,22 @@ type InviteRequest implements Request {
 input CreateRequestInput {
   to: ID!
   status: STATUSES = PENDING
-  requestType: REQUEST_TYPE!
+  reqType: REQUEST_TYPE!
   plan: ID
 }
 
 input UpdateRequestInput {
-  requestId: ID!
+  reqId: ID!
   status: STATUSES!
 }
 
 extend type Query {
   getRequests: [Request]!
-  getRequest(requestId: ID!): Request!
+  getRequest(reqId: ID!): Request!
 }
 
 extend type Mutation {
   createRequest(input: CreateRequestInput!): Request!
   updateRequest(input: UpdateRequestInput!): Request!
-  deleteRequest(requestId: ID!): Boolean!
-  acceptFriendRequest(requestId: ID!): Boolean!
+  deleteRequest(reqId: ID!): Boolean!
 }
