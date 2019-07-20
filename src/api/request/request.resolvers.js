@@ -192,11 +192,17 @@ const acceptFriendRequest = authorize(
     if (!(status === 'ACCEPTED' && requestType === 'FRIEND')) {
       throw new ApolloError('Incorrect request status and/or type!');
     }
-    // update friends array for current user's accepting request
+    // update friends array for current user's accepting request and
+    // remove request from receivedRequests array
     currentUser.friends = [...currentUser.friends, author];
-    // update friends array for the author of the request
+    currentUser.receivedRequests = currentUser.receivedRequests.filter(
+      req => req.toString() !== requestId.toString()
+    );
+    // update friends array for the author of the request and
+    // pull the request from sentRequests arrray
     await models.User.findByIdAndUpdate(author, {
-      $push: { friends: to }
+      $push: { friends: to },
+      $pull: { sentRequests: requestId }
     }).exec();
     await currentUser.save();
     return true;
