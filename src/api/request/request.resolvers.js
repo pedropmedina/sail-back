@@ -90,9 +90,11 @@ const createRequest = authorize(
     try {
       switch (input.requestType) {
         case 'FRIEND':
-          return _checkForExistingFriendReq(input, currentUser, models);
+          await _checkForExistingFriendReq(input, currentUser, models);
+          break;
         case 'INVITE':
-          return _checkForExistingInviteReq(input, currentUser, models);
+          await _checkForExistingInviteReq(input, currentUser, models);
+          break;
         default:
           break;
       }
