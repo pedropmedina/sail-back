@@ -17,6 +17,13 @@ const _hasSentReq = (userDoc, toUserId, reqType) => {
   );
 };
 
+const _areFriends = (friends1, friends2, userId1, userId2) => {
+  return (
+    friends1.some(f => f.toString() === userId1.toString()) &&
+    friends2.some(f => f.toString() === userId2.toString())
+  );
+};
+
 const _checkForExistingFriendReq = async (input, currentUser, models) => {
   const toUser = await models.User.findById(input.to)
     .populate('receivedRequests')
@@ -29,6 +36,18 @@ const _checkForExistingFriendReq = async (input, currentUser, models) => {
     'FRIEND'
   );
   const existingSentReq = _hasSentReq(fromUser, input.to, 'FRIEND');
+
+  const alreadyFriends = _areFriends(
+    toUser.friends,
+    fromUser.friends,
+    currentUser._id,
+    input.to
+  );
+
+  if (alreadyFriends) {
+    console.error('Already friends');
+    throw new ApolloError('Already existing friends!');
+  }
 
   if (existingReceivedReq || existingSentReq) {
     console.error('friend request already made!');
@@ -165,6 +184,9 @@ const deleteRequest = authorize(
 const acceptFriendRequest = authorize(
   async (_, { requestId }, { models, currentUser }) => {
     const request = await models.Request.findById(requestId).exec();
+    // update request status and persist changes
+    request.status = 'ACCEPTED';
+    await request.save();
     const { to, status, requestType, author } = request;
     // make sure the request was accepted and is of type friend
     if (!(status === 'ACCEPTED' && requestType === 'FRIEND')) {
