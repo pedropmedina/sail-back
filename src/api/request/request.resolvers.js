@@ -2,6 +2,67 @@ const { ApolloError } = require('apollo-server');
 const authorize = require('../../utils/authorize');
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 
+const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
+  return userDoc.receivedRequests.some(
+    req =>
+      req.author.toString() === currentUserId.toString() &&
+      req.requestType === reqType &&
+      (cb && typeof cb === 'function' && cb(req))
+  );
+};
+
+const _hasSentReq = (userDoc, toUserId, reqType) => {
+  return userDoc.sentRequests.some(
+    req => req.to.toString() === toUserId && req.requestType === reqType
+  );
+};
+
+const _checkForExistingFriendReq = async (input, currentUser, models) => {
+  const toUser = await models.User.findById(input.to)
+    .populate('receivedRequests')
+    .exec();
+  const fromUser = await models.User.populate(currentUser, 'sentRequests');
+
+  const existingReceivedReq = _hasReceivedReq(
+    toUser,
+    currentUser._id,
+    'FRIEND'
+  );
+  const existingSentReq = _hasSentReq(fromUser, input.to, 'FRIEND');
+
+  if (existingReceivedReq || existingSentReq) {
+    console.error('friend request already made!');
+    throw new ApolloError('Friend request already has been made!');
+  }
+};
+
+const _checkForExistingInviteReq = async (input, currentUser, models) => {
+  const toUser = await models.User.findById(input.to)
+    .populate('receivedRequests')
+    .exec();
+  const fromUser = await models.User.populate(currentUser, 'sentRequests');
+
+  const existingReceivedReq = _hasReceivedReq(
+    toUser,
+    currentUser._id,
+    'INVITE',
+    req => req.plan.toString() === input.plan
+  );
+  const existingSentReq = _hasSentReq(
+    fromUser,
+    input.to,
+    'INVITE',
+    req => req.plan.toString() === input.plan
+  );
+
+  if (existingReceivedReq || existingSentReq) {
+    console.error('Invite request already made!');
+    throw new ApolloError(
+      'Invite request already exist for selected user and plan!'
+    );
+  }
+};
+
 const getRequests = grantAdminAccess(async (_, __, { models }) => {
   try {
     return await models.Request.find({})
@@ -27,6 +88,15 @@ const getRequest = authorize(async (_, { requestId }, { models }) => {
 const createRequest = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
+      switch (input.requestType) {
+        case 'FRIEND':
+          return _checkForExistingFriendReq(input, currentUser, models);
+        case 'INVITE':
+          return _checkForExistingInviteReq(input, currentUser, models);
+        default:
+          break;
+      }
+
       // instantiate request model and save
       const request = await new models.Request({
         ...input,
@@ -42,7 +112,8 @@ const createRequest = authorize(
         { $push: { receivedRequests: request._id } }
       );
       // return request with populated author
-      return await models.Request.populate(request, 'author');
+      const populatePaths = [{ path: 'author' }, { path: 'to' }];
+      return await models.Request.populate(request, populatePaths);
     } catch (error) {
       console.error('Error while creating invite ', error);
       throw error;
