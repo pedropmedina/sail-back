@@ -11,6 +11,7 @@ const planSchema = new Schema(
     location: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
     date: { type: Schema.Types.Date, required: true },
     invites: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
+    participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     chat: { type: Schema.Types.ObjectId, ref: 'Conversation' },
     media: [String],
     private: { type: Boolean, default: false },

@@ -11,9 +11,12 @@ const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
   );
 };
 
-const _hasSentReq = (userDoc, toUserId, reqType) => {
+const _hasSentReq = (userDoc, toUserId, reqType, cb) => {
   return userDoc.sentRequests.some(
-    req => req.to.toString() === toUserId && req.reqType === reqType
+    req =>
+      req.to.toString() === toUserId.toString() &&
+      req.reqType === reqType &&
+      (cb && typeof cb === 'function' && cb(req))
   );
 };
 
@@ -65,13 +68,13 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
     toUser,
     currentUser._id,
     'INVITE',
-    req => req.plan.toString() === input.plan
+    req => req.plan.toString() === input.plan.toString()
   );
   const existingSentReq = _hasSentReq(
     fromUser,
     input.to,
     'INVITE',
-    req => req.plan.toString() === input.plan
+    req => req.plan.toString() === input.plan.toString()
   );
 
   if (existingReceivedReq || existingSentReq) {
@@ -151,18 +154,55 @@ const updateRequest = authorize(
       // find the request that needs to be updated
       const req = await models.Request.findById(reqId)
         .populate('author')
+        .populate('to')
         .exec();
-      // pull request from receivedRequest array and
-      // add to friends or confirmedInvites array based on reqType
-      if (req.status === 'ACCEPTED') {
+      // if currentUser == req.to
+      // 1 - update req.status
+      // and reqType === FRIEND
+      // and if req's status == ACCEPTED
+      // 1 - push req.author into currentUser's friends and remove reqId from receivedRequests
+      // 2 - push req.to into req.author's friends
+      // and if req's status == DENIED
+      // 1 - remove reqId from currentUser's receivedRequests
+
+      // if currentUser == req.to
+      // and reqType === INVITE
+      // and if req's status === ACCEPTED
+      // 1 - push currentUser._id into plan.participants
+      // 2 - remove req from currentUser.receivedRequests
+      // and if req's status === DENIED
+      // 1 - remove req from currentUser.receivedRequests
+
+      if (currentUser._id.toString() === req.to.toString()) {
+        req.status = status;
         if (req.reqType === 'FRIEND') {
-          if (currentUser._id.toString() === req.to.toString()) {
-            req.status = status;
-            currentUser.friends = [...currentUser.friends, req.author];
-            currentUser.receivedRequests = currentUser.receivedRequests.filter(
-              req => req.toString() !== reqId.toString()
-            );
-            await req.save();
+          if (req.status === 'ACCEPTED') {
+            await currentUser
+              .updateOne({
+                $push: { friends: req.author },
+                $pull: { receivedRequests: reqId }
+              })
+              .exec();
+            await models.User.findByIdAndUpdate(req.author, {
+              $push: { friends: currentUser._id }
+            });
+          } else if (req.status === 'DENIED') {
+            await currentUser.updateOne({
+              $pull: { receivedRequests: reqId }
+            });
+          }
+        } else if (req.reqType === 'INVITE') {
+          if (req.status === 'ACCEPTED') {
+            await models.Plan.findByIdAndUpdate(req.plan, {
+              $push: { participants: currentUser._id }
+            }).exec();
+            await currentUser
+              .updateOne({ $pull: { receivedRequests: reqId } })
+              .exec();
+          } else if (req.status === 'DENIED') {
+            await currentUser
+              .updateOne({ $pull: { receivedRequests: reqId } })
+              .exec();
           }
         }
       }
@@ -184,18 +224,16 @@ const deleteRequest = authorize(
         status: { $ne: 'PENDING' }
       }).exec();
 
-      // pull request's id from request's owner sentRequest's array
-      if (req.status === 'ACCEPTED') {
-        if (req.reqType === 'FRIEND') {
-          await currentUser
-            .updateOne({
-              $pull: { sentRequests: req._id },
-              $push: { friends: req.to }
-            })
-            .exec();
-        }
+      // pull request's id from request's owner sentRequests' array
+      if (req.author.toString() === currentUser._id.toString()) {
+        await currentUser
+          .updateOne({
+            $pull: { sentRequests: req._id }
+          })
+          .exec();
+        return true;
       }
-      return true;
+      return false;
     } catch (error) {
       console.error('Error while deleting invite ', error);
       throw error;
@@ -211,7 +249,7 @@ module.exports = {
   Mutation: {
     createRequest,
     updateRequest,
-    deleteRequest,
+    deleteRequest
   },
   Request: {
     __resolveType({ reqType }) {

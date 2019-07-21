@@ -5,6 +5,7 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
     const plan = await models.Plan.finById(planId)
       .populate({ path: 'location', populate: { path: 'comments' } })
       .populate('invites')
+      .populate('participants')
       .populate('chat')
       .populate('author')
       .exec();
@@ -24,6 +25,7 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
     const opts = [
       { path: 'location', populate: 'comments' },
       { path: 'invites' },
+      { path: 'participants' },
       { path: 'chat' },
       { path: 'author' }
     ];
@@ -41,6 +43,7 @@ const updatePlan = authorize(async (_, { input }, { models }) => {
     const plan = await models.Plan.findByIdAndUpdate(_id, update, { new: true })
       .populate({ path: 'location', populate: 'comments' })
       .populate('invites')
+      .populate('participants')
       .populate('chat')
       .populate('author')
       .exec();
