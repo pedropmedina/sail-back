@@ -3,21 +3,20 @@ const authorize = require('../../utils/authorize');
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 
 const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
-  return userDoc.receivedRequests.some(
-    req =>
+  return userDoc.receivedRequests.some(req => {
+    const condition =
       req.author.toString() === currentUserId.toString() &&
-      req.reqType === reqType &&
-      (cb && typeof cb === 'function' && cb(req))
-  );
+      req.reqType === reqType;
+    return cb && typeof cb === 'function' && condition ? cb(req) : condition;
+  });
 };
 
 const _hasSentReq = (userDoc, toUserId, reqType, cb) => {
-  return userDoc.sentRequests.some(
-    req =>
-      req.to.toString() === toUserId.toString() &&
-      req.reqType === reqType &&
-      (cb && typeof cb === 'function' && cb(req))
-  );
+  return userDoc.sentRequests.some(req => {
+    const condition =
+      req.to.toString() === toUserId.toString() && req.reqType === reqType;
+    return cb && typeof cb === 'function' && condition ? cb(req) : condition;
+  });
 };
 
 const _areFriends = (friends1, friends2, userId1, userId2) => {
@@ -118,7 +117,7 @@ const createRequest = authorize(
           await _checkForExistingInviteReq(input, currentUser, models);
           break;
         default:
-          break;
+          throw new ApolloError('Invalid request type!');
       }
 
       // instantiate request model and save
