@@ -151,9 +151,9 @@ const updateRequest = authorize(
         throw new ApolloError("Status hasn't changed!");
       }
       // find the request that needs to be updated
-      const req = await models.Request.findById(reqId)
-        .populate('author')
+      let req = await models.Request.findById(reqId)
         .populate('to')
+        .populate('author')
         .exec();
       // if currentUser == req.to
       // 1 - update req.status
@@ -172,17 +172,17 @@ const updateRequest = authorize(
       // and if req's status === DENIED
       // 1 - remove req from currentUser.receivedRequests
 
-      if (currentUser._id.toString() === req.to.toString()) {
+      if (currentUser._id.toString() === req.to._id.toString()) {
         req.status = status;
         if (req.reqType === 'FRIEND') {
           if (req.status === 'ACCEPTED') {
             await currentUser
               .updateOne({
-                $push: { friends: req.author },
+                $push: { friends: req.author._id },
                 $pull: { receivedRequests: reqId }
               })
               .exec();
-            await models.User.findByIdAndUpdate(req.author, {
+            await models.User.findByIdAndUpdate(req.author._id, {
               $push: { friends: currentUser._id }
             });
           } else if (req.status === 'DENIED') {
@@ -204,6 +204,8 @@ const updateRequest = authorize(
               .exec();
           }
         }
+        req = await req.save();
+        req = await models.User.populate([{ path: 'to' }, { path: 'author' }]);
       }
       return req;
     } catch (error) {
