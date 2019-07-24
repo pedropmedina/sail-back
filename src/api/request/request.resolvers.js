@@ -95,10 +95,11 @@ const getRequests = grantAdminAccess(async (_, __, { models }) => {
   }
 });
 
-const getRequest = authorize(async (_, { requestId }, { models }) => {
+const getRequest = authorize(async (_, { reqId }, { models }) => {
   try {
-    return await models.Request.findById(requestId)
+    return await models.Request.findById(reqId)
       .populate('author')
+      .populate('to')
       .exec();
   } catch (error) {
     console.error('Error while getting invite ', error);
@@ -226,13 +227,15 @@ const deleteRequest = authorize(
       }).exec();
 
       // pull request's id from request's owner sentRequests' array
-      if (req.author.toString() === currentUser._id.toString()) {
-        await currentUser
-          .updateOne({
-            $pull: { sentRequests: req._id }
-          })
-          .exec();
-        return true;
+      if (req) {
+        if (req.author.toString() === currentUser._id.toString()) {
+          await currentUser
+            .updateOne({
+              $pull: { sentRequests: req._id }
+            })
+            .exec();
+          return true;
+        }
       }
       return false;
     } catch (error) {
