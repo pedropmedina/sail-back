@@ -18,15 +18,14 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
 
 const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
   try {
-    let plan = await new models.Plan({
+    let plan = new models.Plan({
       ...input,
       author: currentUser._id
-    }).save();
+    });
+    await plan.save();
     const opts = [
       { path: 'location', populate: 'comments' },
       { path: 'invites' },
-      { path: 'participants' },
-      { path: 'chat' },
       { path: 'author' }
     ];
     plan = await models.Plan.populate(plan, opts);
