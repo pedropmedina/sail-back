@@ -4,7 +4,7 @@ type Plan {
   description: String!
   location: Pin!
   date: String!
-  invites: [Request]!
+  invites: [User]!
   participants: [User]!
   chat: Conversation
   media: [String]!

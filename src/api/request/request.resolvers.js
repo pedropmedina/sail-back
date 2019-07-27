@@ -1,5 +1,6 @@
 const { ApolloError } = require('apollo-server');
 const authorize = require('../../utils/authorize');
+const areFriends = require('../../utils/areFriends');
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 
 const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
@@ -19,13 +20,6 @@ const _hasSentReq = (userDoc, toUserId, reqType, cb) => {
   });
 };
 
-const _areFriends = (friends1, friends2, userId1, userId2) => {
-  return (
-    friends1.some(f => f.toString() === userId1.toString()) &&
-    friends2.some(f => f.toString() === userId2.toString())
-  );
-};
-
 const _checkForExistingFriendReq = async (input, currentUser, models) => {
   const toUser = await models.User.findById(input.to)
     .populate('receivedRequests')
@@ -39,7 +33,7 @@ const _checkForExistingFriendReq = async (input, currentUser, models) => {
   );
   const existingSentReq = _hasSentReq(fromUser, input.to, 'FRIEND');
 
-  const alreadyFriends = _areFriends(
+  const alreadyFriends = areFriends(
     toUser.friends,
     fromUser.friends,
     currentUser._id,
@@ -62,6 +56,18 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
     .populate('receivedRequests')
     .exec();
   const fromUser = await models.User.populate(currentUser, 'sentRequests');
+
+  // make sure the request is only made to friends
+  const isFriend = areFriends(
+    toUser.friends,
+    fromUser.friends,
+    currentUser._id,
+    input.to
+  );
+
+  if (!isFriend) {
+    throw new ApolloError('Must be a friend first to sent invite!');
+  }
 
   const existingReceivedReq = _hasReceivedReq(
     toUser,
