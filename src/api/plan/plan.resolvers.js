@@ -1,3 +1,4 @@
+const { ApolloError } = require('apollo-server');
 const authorize = require('../../utils/authorize');
 
 const getPlan = authorize(async (_, { planId }, { models }) => {
@@ -59,6 +60,11 @@ const deletePlan = authorize(async (_, { _id }, { models, currentUser }) => {
       _id,
       author: currentUser._id
     }).exec();
+
+    if (!plan) {
+      throw new ApolloError('Unauthorized action!');
+    }
+
     await plan.remove();
     return true;
   } catch (error) {

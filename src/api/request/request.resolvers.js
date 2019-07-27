@@ -232,18 +232,17 @@ const deleteRequest = authorize(
         status: { $ne: 'PENDING' }
       }).exec();
 
-      // pull request's id from request's owner sentRequests' array
-      if (req) {
-        if (req.author.toString() === currentUser._id.toString()) {
-          await currentUser
-            .updateOne({
-              $pull: { sentRequests: req._id }
-            })
-            .exec();
-          return true;
-        }
+      if (!req) {
+        throw new ApolloError('Unauthorized action!');
       }
-      return false;
+
+      // pull request's id from request's owner sentRequests' array
+      await currentUser
+        .updateOne({
+          $pull: { sentRequests: req._id }
+        })
+        .exec();
+      return true;
     } catch (error) {
       console.error('Error while deleting invite ', error);
       throw error;
