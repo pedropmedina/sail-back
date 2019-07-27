@@ -206,7 +206,7 @@ const updateRequest = authorize(
           }
         }
         req = await req.save();
-        req = await models.User.populate([{ path: 'to' }, { path: 'author' }]);
+        req = await models.Request.populate(req, [{ path: 'to' }, { path: 'author' }]);
       }
       return req;
     } catch (error) {
