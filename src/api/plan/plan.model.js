@@ -28,8 +28,11 @@ planSchema.pre('remove', async function() {
 
 // create a request for each user in the invites array
 planSchema.pre('save', async function() {
-  // find the author of the request to push request id into corresponding array
+  // find author and push plan's id into plans arrays
   const author = await User.findById(this.author).exec();
+  author.myPlans.push(this._id);
+  author.inPlans.push(this._id);
+  await author.save();
 
   for (let inviteeId of this.invites) {
     // instantiate new request and persist in db

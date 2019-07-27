@@ -5,8 +5,9 @@ type User {
   image: String
   address: Address
   friends: [User]!
-  plans: [Plan]!
-  pins: [Pin]!
+  myPlans: [Plan]!
+  inPlans: [Plan]!
+  myPins: [Pin]!
   likedPins: [Pin]!
   sentRequests: [Request]!
   receivedRequests: [Request]!

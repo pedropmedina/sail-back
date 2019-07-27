@@ -47,7 +47,8 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check for user in db
     const user = await models.User.findOne({ username })
-      .populate('plans')
+      .populate('myPlans')
+      .populate('inPlans')
       .populate({
         path: 'pins',
         populate: { path: 'comments' }
@@ -90,8 +91,9 @@ const logoutUser = async (_, { token }, { models }) => {
 // access current user's info
 const me = authorize(async (_, __, { models, currentUser }) => {
   const opts = [
-    { path: 'plans' },
-    { path: 'pins', populate: { path: 'comments' } },
+    { path: 'myPlans' },
+    { path: 'inPlans' },
+    { path: 'myPins', populate: { path: 'comments' } },
     { path: 'likedPins' },
     { path: 'friends' }
   ];
@@ -102,9 +104,10 @@ const me = authorize(async (_, __, { models, currentUser }) => {
 const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
     const users = await models.User.find({})
-      .populate('plans')
+      .populate('myPlans')
+      .populate('inPlans')
       .populate({
-        path: 'pins',
+        path: 'myPins',
         populate: { path: 'comments' }
       })
       .populate('likedpins')
@@ -119,9 +122,10 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
 const getUser = grantAdminAccess(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
-      .populate('plans')
+      .populate('myPlans')
+      .populate('inPlans')
       .populate({
-        path: 'pins',
+        path: 'myPins',
         populate: { path: 'comments' }
       })
       .populate('likedpins')
@@ -141,9 +145,10 @@ const updateUser = authorize(
       const user = await models.User.findByIdAndUpdate(userId, update, {
         new: true
       })
-        .populate('plans')
+        .populate('myPlans')
+        .populate('inPlans')
         .populate({
-          path: 'pins',
+          path: 'myPins',
           populate: { path: 'comments' }
         })
         .populate('likedpins')
@@ -160,9 +165,10 @@ const updateUser = authorize(
 const deleteUser = authorize(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
-      .populate('plans')
+      .populate('myPlans')
+      .populate('inPlans')
       .populate({
-        path: 'pins',
+        path: 'myPins',
         populate: { path: 'comments' }
       })
       .populate('likedpins')

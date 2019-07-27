@@ -14,8 +14,6 @@ const conversationSchema = new Schema(
   { timestamps: true }
 );
 
-const Conversation = mongoose.model('Conversation', conversationSchema);
-
 // prepare messagesKeyedByUsername to represent an array of messages by participant's username
 // this isolates messages by user allowing user to delete messages as pleased without altering other user's conversation
 conversationSchema.pre('save', function(next) {
@@ -36,5 +34,7 @@ conversationSchema.pre('remove', async function() {
   // delete messages corresponding to conversation
   return await Message.deleteMany({ conversation: this._id }).exec();
 });
+
+const Conversation = mongoose.model('Conversation', conversationSchema);
 
 module.exports = Conversation;

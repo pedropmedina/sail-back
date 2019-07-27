@@ -197,7 +197,10 @@ const updateRequest = authorize(
               $push: { participants: currentUser._id }
             }).exec();
             await currentUser
-              .updateOne({ $pull: { receivedRequests: reqId } })
+              .updateOne({
+                $pull: { receivedRequests: reqId },
+                $push: { inPlans: req.plan }
+              })
               .exec();
           } else if (req.status === 'DENIED') {
             await currentUser
@@ -206,7 +209,10 @@ const updateRequest = authorize(
           }
         }
         req = await req.save();
-        req = await models.Request.populate(req, [{ path: 'to' }, { path: 'author' }]);
+        req = await models.Request.populate(req, [
+          { path: 'to' },
+          { path: 'author' }
+        ]);
       }
       return req;
     } catch (error) {

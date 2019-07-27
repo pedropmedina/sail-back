@@ -32,8 +32,9 @@ const userSchema = new Schema(
       zip: String
     },
     image: String,
-    plans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
-    pins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
+    myPlans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
+    inPlans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
+    myPins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
     likedPins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     sentRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
