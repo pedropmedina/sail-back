@@ -30,13 +30,14 @@ const getConversation = authorize(async (_, { conversationId }, { models }) => {
 const createConversation = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
-      let conversation = await new models.Conversation({
+      const conversation = await new models.Conversation({
         ...input,
         author: currentUser._id
-      }).save();
+      })
+        .keyMessagesByUser(currentUser.username)
+        .save();
       const opts = [{ path: 'messages' }, { path: 'author', populate: 'pins' }];
-      conversation = await models.Conversation.populate(conversation, opts);
-      return conversation;
+      return await models.Conversation.populate(conversation, opts);
     } catch (error) {
       console.error('Error while creating conversation', error);
     }
@@ -103,5 +104,12 @@ module.exports = {
     deleteConversation,
     emptyMessages,
     pullMessage
+  },
+  Conversation: {
+    participants: async (root, _, { models }) => {
+      return await models.User.find({
+        username: { $in: root.participants }
+      }).exec();
+    }
   }
 };

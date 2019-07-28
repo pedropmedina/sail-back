@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const { User } = require('../user/user.model');
 const Message = require('../message/message.model');
 
 const conversationSchema = new Schema(
   {
-    participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    participants: [{ type: String, required: true }],
     messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
     messagesKeyedByUsername: Schema.Types.Mixed,
     author: { type: Schema.Types.ObjectId, ref: 'User' }
@@ -14,21 +13,19 @@ const conversationSchema = new Schema(
   { timestamps: true }
 );
 
-// prepare messagesKeyedByUsername to represent an array of messages by participant's username
-// this isolates messages by user allowing user to delete messages as pleased without altering other user's conversation
-conversationSchema.pre('save', function(next) {
-  if (this.isNew) {
-    this.messagesKeyedByUsername = this.participants.reduce(
-      async (participants, participantId) => {
-        const user = await User.findById(participantId).exec();
-        participants[user.username] = [];
-        return participants;
-      },
-      {}
-    );
-  }
-  next();
-});
+// construct messagesKeyedByUsername field allowing participants to isolate
+// their own copy of messages that can be manipulated as wished
+conversationSchema.methods.keyMessagesByUser = function(authorUsername) {
+  this.participants.push(authorUsername);
+  this.messagesKeyedByUsername = this.participants.reduce(
+    (messages, username) => {
+      messages[username] = [];
+      return messages;
+    },
+    {}
+  );
+  return this;
+};
 
 conversationSchema.pre('remove', async function() {
   // delete messages corresponding to conversation

@@ -1,15 +1,15 @@
+scalar JSONObject
+
 type Conversation {
   _id: ID!
   participants: [User!]!
   messages: [Message]!
-  messagesKeyedByUsername: [Message]!
+  messagesKeyedByUsername: JSONObject!
   author: User!
 }
 
 input CreateConversationInput {
-  participants: [ID!]!
-  messages: [ID]!
-  author: ID!
+  participants: [String!]!
 }
 
 input PullMessageInput {

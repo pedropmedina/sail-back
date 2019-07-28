@@ -1,5 +1,6 @@
 const { AuthenticationError } = require('apollo-server');
 const merge = require('lodash/merge');
+const { GraphQLJSONObject } = require('graphql-type-json');
 
 // api
 const plan = require('./plan');
@@ -27,7 +28,7 @@ module.exports = {
     user.typeDefs
   ].join(' '),
   resolvers: merge(
-    {},
+    { JSONObject: GraphQLJSONObject },
     plan.resolvers,
     conversation.resolvers,
     message.resolvers,
