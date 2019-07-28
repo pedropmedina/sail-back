@@ -4,7 +4,7 @@ type Conversation {
   _id: ID!
   participants: [User!]!
   messages: [Message]!
-  messagesKeyedByUsername: JSONObject!
+  keyedMessagesByUser: JSONObject!
   author: User!
 }
 

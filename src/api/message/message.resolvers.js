@@ -30,10 +30,12 @@ const getMessage = authorize(async (_, { messageId }, { models }) => {
 const createMessage = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
-      const message = await new models.Message({
+      const message = new models.Message({
         ...input,
         author: currentUser._id
-      }).save();
+      });
+      await message.addMessageToConversation(models.Conversation);
+      await message.save();
       return await models.Message.populate(message, [
         { path: 'conversation' },
         { path: 'author' }

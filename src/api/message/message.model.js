@@ -1,9 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const Conversation = require('../conversation/conversation.model');
-const { User } = require('../user/user.model');
-
 const messageSchema = new Schema(
   {
     conversation: {
@@ -17,15 +14,17 @@ const messageSchema = new Schema(
   { timestamps: true }
 );
 
-messageSchema.pre('save', async function() {
+// add message to corresponding conversation
+// markModified path is required to persist changes made to mixed types in mongoose
+messageSchema.methods.addMessageToConversation = async function(Conversation) {
   const conversation = await Conversation.findById(this.conversation).exec();
   conversation.messages.push(this._id);
-  for (let participantId of this.participants) {
-    const user = await User.findById(participantId).exec();
-    conversation.messagesKeyedByUsername[user.username].push(this._id);
+  for (let username of conversation.participants) {
+    conversation.keyedMessagesByUser[username].push(this._id);
+    conversation.markModified(`keyedMessagesByUser.${username}`);
   }
   await conversation.save();
-});
+};
 
 const Message = mongoose.model('Message', messageSchema);
 

@@ -7,23 +7,20 @@ const conversationSchema = new Schema(
   {
     participants: [{ type: String, required: true }],
     messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
-    messagesKeyedByUsername: Schema.Types.Mixed,
+    keyedMessagesByUser: Schema.Types.Mixed,
     author: { type: Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
 );
 
-// construct messagesKeyedByUsername field allowing participants to isolate
+// construct keyedMessagesByUser field allowing participants to isolate
 // their own copy of messages that can be manipulated as wished
 conversationSchema.methods.keyMessagesByUser = function(authorUsername) {
   this.participants.push(authorUsername);
-  this.messagesKeyedByUsername = this.participants.reduce(
-    (messages, username) => {
-      messages[username] = [];
-      return messages;
-    },
-    {}
-  );
+  this.keyedMessagesByUser = this.participants.reduce((messages, username) => {
+    messages[username] = [];
+    return messages;
+  }, {});
   return this;
 };
 

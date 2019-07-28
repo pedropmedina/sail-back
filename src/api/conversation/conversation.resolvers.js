@@ -62,8 +62,8 @@ const deleteConversation = grantAdminAccess(
 const emptyMessages = authorize(
   async (_, { conversationId }, { models, currentUser }) => {
     const { username } = currentUser;
-    const field = `messagesKeyedByUsername.${username}`;
-    const conversation = await models.Conversation.findByIdAndUpdate(
+    const field = `keyedMessagesByUser.${username}`;
+    return await models.Conversation.findByIdAndUpdate(
       conversationId,
       {
         [field]: []
@@ -71,27 +71,23 @@ const emptyMessages = authorize(
       { new: true }
     )
       .populate('messages')
-      .populate({ path: 'messagesKeyedByUsername', populate: username })
       .exec();
-    return conversation;
   }
 );
 
 const pullMessage = authorize(async (_, { input }, { models, currentUser }) => {
   const { conversationId, messageId } = input;
   const { username } = currentUser;
-  const field = `messagesKeyedByUsername.${username}`;
-  const conversation = models.Conversation.findByIdAndUpdate(
+  const field = `keyedMessagesByUser.${username}`;
+  return await models.Conversation.findByIdAndUpdate(
     conversationId,
     {
-      $pull: { [field]: { $in: [messageId] } }
+      $pull: { [field]: messageId }
     },
     { new: true }
   )
     .populate('messages')
-    .populate({ path: 'messagesKeyedByUsername', populate: username })
     .exec();
-  return conversation;
 });
 
 module.exports = {
