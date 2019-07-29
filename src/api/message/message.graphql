@@ -26,3 +26,11 @@ extend type Mutation {
   removeMessages(conversationId: ID!): Boolean!
   removeMessage(input: RemoveMessageInput!): Boolean!
 }
+
+extend type Subscription {
+  messageCreated: Conversation!
+  messageUpdated: Conversation!
+  messageDeleted: Conversation!
+  messagesRemoved: Conversation!
+  messageRemoved: Conversation!
+}
