@@ -106,6 +106,17 @@ module.exports = {
       return await models.User.find({
         username: { $in: root.participants }
       }).exec();
+    },
+    keyedMessagesByUser: root => {
+      return root.participants.reduce((populatedMessages, participant) => {
+        const messages = root.messages.filter(message => {
+          return root.keyedMessagesByUser[participant].some(msgId =>
+            msgId.equals(message._id)
+          );
+        });
+        populatedMessages[participant] = messages;
+        return populatedMessages;
+      }, {});
     }
   }
 };
