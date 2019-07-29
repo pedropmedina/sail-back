@@ -14,7 +14,7 @@ const conversationSchema = new Schema(
 );
 
 // construct keyedMessagesByUser field allowing participants to isolate
-// their own copy of messages that can be manipulated as wished
+// their own copy of messages that can be manipulated as wished without altering the main messages array
 conversationSchema.methods.keyMessagesByUser = function(authorUsername) {
   this.participants.push(authorUsername);
   this.keyedMessagesByUser = this.participants.reduce((messages, username) => {
