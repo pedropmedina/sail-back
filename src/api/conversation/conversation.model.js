@@ -44,8 +44,7 @@ conversationSchema.statics.removeMessageFromUsers = async function(
     );
     conversation.markModified(`keyedMessagesByUser.${participant}`);
   }
-  await conversation.save();
-  return conversation;
+  return await conversation.save();
 };
 
 conversationSchema.pre('remove', async function() {

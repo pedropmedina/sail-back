@@ -43,13 +43,19 @@ const createMessage = authorize(
         ...input,
         author: currentUser._id
       });
-      // add message to each participant in conversation and return conversation
-      const conversation = await message.addMessageToConversation(
+      await message.save();
+      // add message to each participant of conversation
+      let conversation = await message.addMessageToConversation(
         models.Conversation
       );
+      // populate required fields to publish conversation
+      conversation = await models.Conversation.populate(conversation, [
+        { path: 'messages' },
+        { path: 'author' }
+      ]);
       // publish message
       pubSub.publish(MESSAGE_CREATED, { messageCreated: conversation });
-      await message.save();
+
       return await models.Message.populate(message, [
         { path: 'conversation' },
         { path: 'author' }
@@ -65,10 +71,14 @@ const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
   try {
     const message = await models.Message.findByIdAndDelete(messageId).exec();
     // delete message's id from each participant in conversation and return conversation
-    const conversation = await models.Conversation.removeMessageFromUsers(
+    let conversation = await models.Conversation.removeMessageFromUsers(
       message.conversation,
       message._id
     );
+    conversation = await models.Conversation.populate(conversation, [
+      { path: 'messages' },
+      { path: 'author' }
+    ]);
     // publish updated conversation upon deletion of message
     pubSub.publish(MESSAGE_DELETED, { messageDeleted: conversation });
     return true;
@@ -80,14 +90,18 @@ const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
 
 const removeMessages = authorize(
   async (_, { conversationId }, { models, currentUser: { username } }) => {
-    const conversation = await models.Conversation.findById(
+    let conversation = await models.Conversation.findById(
       conversationId
     ).exec();
     conversation.keyedMessagesByUser[username] = [];
     conversation.markModified(`keyedMessagesByUser.${username}`);
-    // publish the updated conversation with messages removed for current user
-    pubSub.publish(MESSAGES_REMOVED, { messagedRemoved: conversation });
     await conversation.save();
+    conversation = await models.Conversation.populate(conversation, [
+      { path: 'messages' },
+      { path: 'author' }
+    ]);
+    // publish the updated conversation with messages removed for current user
+    pubSub.publish(MESSAGES_REMOVED, { messagesRemoved: conversation });
     return true;
   }
 );
@@ -98,7 +112,7 @@ const removeMessage = authorize(
     { input: { conversationId, messageId } },
     { models, currentUser: { username } }
   ) => {
-    const conversation = await models.Conversation.findById(
+    let conversation = await models.Conversation.findById(
       conversationId
     ).exec();
     const messages = conversation.keyedMessagesByUser[username];
@@ -106,9 +120,13 @@ const removeMessage = authorize(
       msgId => !msgId.equals(messageId)
     );
     conversation.markModified(`keyedMessagesByUser.${username}`);
+    await conversation.save();
+    conversation = await models.Conversation.populate(conversation, [
+      { path: 'messages' },
+      { path: 'author' }
+    ]);
     // publish updated  conversation with removed message for current user
     pubSub.publish(MESSAGE_REMOVED, { messageRemoved: conversation });
-    await conversation.save();
     return true;
   }
 );

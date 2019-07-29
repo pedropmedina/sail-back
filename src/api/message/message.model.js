@@ -23,8 +23,7 @@ messageSchema.methods.addMessageToConversation = async function(Conversation) {
     conversation.keyedMessagesByUser[username].push(this._id);
     conversation.markModified(`keyedMessagesByUser.${username}`);
   }
-  await conversation.save();
-  return conversation;
+  return await conversation.save();
 };
 
 const Message = mongoose.model('Message', messageSchema);
