@@ -58,6 +58,37 @@ const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
   }
 });
 
+const emptyMessages = authorize(
+  async (_, { conversationId }, { models, currentUser }) => {
+    const { username } = currentUser;
+    const field = `keyedMessagesByUser.${username}`;
+    return await models.Conversation.findByIdAndUpdate(
+      conversationId,
+      {
+        [field]: []
+      },
+      { new: true }
+    )
+      .populate('messages')
+      .exec();
+  }
+);
+
+const pullMessage = authorize(async (_, { input }, { models, currentUser }) => {
+  const { conversationId, messageId } = input;
+  const { username } = currentUser;
+  const field = `keyedMessagesByUser.${username}`;
+  return await models.Conversation.findByIdAndUpdate(
+    conversationId,
+    {
+      $pull: { [field]: messageId }
+    },
+    { new: true }
+  )
+    .populate('messages')
+    .exec();
+});
+
 module.exports = {
   Query: {
     getMessages,
@@ -65,6 +96,8 @@ module.exports = {
   },
   Mutation: {
     createMessage,
-    deleteMessage
+    deleteMessage,
+    emptyMessages,
+    pullMessage
   }
 };

@@ -12,11 +12,6 @@ input CreateConversationInput {
   participants: [String!]!
 }
 
-input PullMessageInput {
-  conversationId: ID!
-  messageId: ID!
-}
-
 extend type Query {
   getConversations: [Conversation]!
   getConversation(conversationId: ID!): Conversation!
@@ -25,6 +20,4 @@ extend type Query {
 extend type Mutation {
   createConversation(input: CreateConversationInput!): Conversation!
   deleteConversation(conversationId: ID!): Boolean!
-  emptyMessages(conversationId: ID!): Boolean!
-  pullMessage(input: PullMessageInput!): Boolean!
 }
