@@ -128,7 +128,7 @@ module.exports = {
     messageCreated: {
       subscribe: () => pubSub.asyncIterator(MESSAGE_CREATED)
     },
-    messageUpdate: {
+    messageUpdated: {
       subscribe: () => pubSub.asyncIterator(MESSAGE_UPDATED)
     },
     messageDeleted: {
