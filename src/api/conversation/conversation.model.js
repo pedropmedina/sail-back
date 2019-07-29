@@ -24,6 +24,29 @@ conversationSchema.methods.keyMessagesByUser = function(authorUsername) {
   return this;
 };
 
+// pull messages from keyedMessagesByUser upon deletion of message
+conversationSchema.statics.removeMessage = async function(
+  conversationId,
+  messageId
+) {
+  const conversation = await this.findByIdAndUpdate(
+    conversationId,
+    {
+      $pull: { messages: messageId }
+    },
+    { new: true }
+  ).exec();
+
+  for (let participant of conversation.participants) {
+    let messages = conversation.keyedMessagesByUser[participant];
+    conversation.keyedMessagesByUser[participant] = messages.filter(
+      msgId => !msgId.equals(messageId)
+    );
+    conversation.markModified(`keyedMessagesByUser.${participant}`);
+  }
+  await conversation.save();
+};
+
 conversationSchema.pre('remove', async function() {
   // delete messages corresponding to conversation
   return await Message.deleteMany({ conversation: this._id }).exec();

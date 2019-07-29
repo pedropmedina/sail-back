@@ -49,7 +49,8 @@ const createMessage = authorize(
 
 const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
   try {
-    await models.Message.findByIdAndDelete(messageId).exec();
+    const message = await models.Message.findByIdAndDelete(messageId).exec();
+    await models.Conversation.removeMessage(message.conversation, message._id);
     return true;
   } catch (error) {
     console.error('Error while deleting message', error);
