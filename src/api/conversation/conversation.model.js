@@ -25,7 +25,7 @@ conversationSchema.methods.keyMessagesByUser = function(authorUsername) {
 };
 
 // pull messages from keyedMessagesByUser upon deletion of message
-conversationSchema.statics.removeMessage = async function(
+conversationSchema.statics.removeMessageFromUsers = async function(
   conversationId,
   messageId
 ) {

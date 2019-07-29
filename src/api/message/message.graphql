@@ -10,7 +10,7 @@ input CreateMessageInput {
   content: String!
 }
 
-input PullMessageInput {
+input RemoveMessageInput {
   conversationId: ID!
   messageId: ID!
 }
@@ -23,6 +23,6 @@ extend type Query {
 extend type Mutation {
   createMessage(input: CreateMessageInput!): Message!
   deleteMessage(messageId: ID!): Boolean!
-  emptyMessages(conversationId: ID!): Boolean!
-  pullMessage(input: PullMessageInput!): Boolean!
+  removeMessages(conversationId: ID!): Boolean!
+  removeMessage(input: RemoveMessageInput!): Boolean!
 }

@@ -50,7 +50,10 @@ const createMessage = authorize(
 const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
   try {
     const message = await models.Message.findByIdAndDelete(messageId).exec();
-    await models.Conversation.removeMessage(message.conversation, message._id);
+    await models.Conversation.removeMessageFromUsers(
+      message.conversation,
+      message._id
+    );
     return true;
   } catch (error) {
     console.error('Error while deleting message', error);
@@ -58,36 +61,36 @@ const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
   }
 });
 
-const emptyMessages = authorize(
-  async (_, { conversationId }, { models, currentUser }) => {
-    const { username } = currentUser;
-    const field = `keyedMessagesByUser.${username}`;
-    return await models.Conversation.findByIdAndUpdate(
-      conversationId,
-      {
-        [field]: []
-      },
-      { new: true }
-    )
-      .populate('messages')
-      .exec();
+const removeMessages = authorize(
+  async (_, { conversationId }, { models, currentUser: { username } }) => {
+    const conversation = await models.Conversation.findById(
+      conversationId
+    ).exec();
+    conversation.keyedMessagesByUser[username] = [];
+    conversation.markModified(`keyedMessagesByUser.${username}`);
+    await conversation.save();
+    return true;
   }
 );
 
-const pullMessage = authorize(async (_, { input }, { models, currentUser }) => {
-  const { conversationId, messageId } = input;
-  const { username } = currentUser;
-  const field = `keyedMessagesByUser.${username}`;
-  return await models.Conversation.findByIdAndUpdate(
-    conversationId,
-    {
-      $pull: { [field]: messageId }
-    },
-    { new: true }
-  )
-    .populate('messages')
-    .exec();
-});
+const removeMessage = authorize(
+  async (
+    _,
+    { input: { conversationId, messageId } },
+    { models, currentUser: { username } }
+  ) => {
+    const conversation = await models.Conversation.findById(
+      conversationId
+    ).exec();
+    const messages = conversation.keyedMessagesByUser[username];
+    conversation.keyedMessagesByUser[username] = messages.filter(
+      msgId => !msgId.equals(messageId)
+    );
+    conversation.markModified(`keyedMessagesByUser.${username}`);
+    await conversation.save();
+    return true;
+  }
+);
 
 module.exports = {
   Query: {
@@ -97,7 +100,7 @@ module.exports = {
   Mutation: {
     createMessage,
     deleteMessage,
-    emptyMessages,
-    pullMessage
+    removeMessages,
+    removeMessage
   }
 };
