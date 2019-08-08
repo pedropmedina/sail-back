@@ -81,5 +81,6 @@ module.exports = {
       },
       loaders: { users }
     };
-  }
+  },
+  cors: { origin: '*', credentials: true }
 };

@@ -46,7 +46,9 @@ const signupUser = async (_, { input: { email, password } }, { models }) => {
 const loginUser = async (_, { input: { username, password } }, { models }) => {
   try {
     // check for user in db
-    const user = await models.User.findOne({ username })
+    const user = await models.User.findOne({
+      $or: [{ username }, { email: username }]
+    })
       .populate('myPlans')
       .populate('inPlans')
       .populate({
@@ -187,8 +189,6 @@ const likePin = authorize(async (_, { pinId }, { currentUser }) => {
   return true;
 });
 
-
-
 module.exports = {
   Query: {
     me,
@@ -201,6 +201,6 @@ module.exports = {
     logoutUser,
     updateUser,
     deleteUser,
-    likePin,
+    likePin
   }
 };
