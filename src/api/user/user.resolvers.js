@@ -1,15 +1,18 @@
 const { AuthenticationError } = require('apollo-server');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 // utils
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 const authorize = require('../../utils/authorize');
-
-const secret = process.env.JWT_SECRET;
+const createTokens = require('../../utils/createTokens');
+const { setCookies, getCookies } = require('../../utils/handleCookies');
 
 // sign up new user
-const signupUser = async (_, { input: { email, password } }, { models }) => {
+const signupUser = async (
+  _,
+  { input: { email, password } },
+  { models, res }
+) => {
   try {
     // check if email already exists
     let user = await models.User.findOne({ email }).exec();
@@ -26,16 +29,11 @@ const signupUser = async (_, { input: { email, password } }, { models }) => {
     user = new models.User({ email, password: hash });
     await user.save();
 
-    // generate token to be sent to the user
-    const token = jwt.sign({ payload: user._id }, secret, {
-      expiresIn: '1 day'
-    });
+    // create tokens and set cookies
+    const tokens = createTokens(user._id);
+    setCookies(res, tokens);
 
-    // return auth schema to the client
-    return {
-      token,
-      user
-    };
+    return user;
   } catch (error) {
     console.error('Error while signing up: ', error.message);
     throw error;
@@ -43,7 +41,11 @@ const signupUser = async (_, { input: { email, password } }, { models }) => {
 };
 
 // login existing user
-const loginUser = async (_, { input: { username, password } }, { models }) => {
+const loginUser = async (
+  _,
+  { input: { username, password } },
+  { models, res }
+) => {
   try {
     // check for user in db
     const user = await models.User.findOne({
@@ -66,16 +68,11 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new AuthenticationError('Wrong credentials.');
 
-    // generate token
-    const token = jwt.sign({ payload: user._id }, secret, {
-      expiresIn: '1 day'
-    });
+    // create tokens and set cookies
+    const tokens = createTokens(user._id);
+    setCookies(res, tokens);
 
-    // return auth schema to client
-    return {
-      token,
-      user
-    };
+    return user;
   } catch (error) {
     console.error('Error while logging user: ', error.message);
     throw error;
@@ -83,12 +80,15 @@ const loginUser = async (_, { input: { username, password } }, { models }) => {
 };
 
 // logout user and blacklist token
-const logoutUser = async (_, { token }, { models }) => {
+const blacklistTokens = async (_, __, { models, req }) => {
   try {
-    await new models.BlacklistedToken({ token }).save();
+    const { accessToken, refreshToken } = getCookies(req);
+    await new models.BlacklistedToken({ token: accessToken }).save();
+    await new models.BlacklistedToken({ token: refreshToken }).save();
     return true;
   } catch (error) {
     console.error('Error while blacklisting token: ', error.message);
+    return false;
   }
 };
 
@@ -202,7 +202,7 @@ module.exports = {
   Mutation: {
     signupUser,
     loginUser,
-    logoutUser,
+    blacklistTokens,
     updateUser,
     deleteUser,
     likePin

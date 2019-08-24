@@ -1,4 +1,3 @@
-const { AuthenticationError } = require('apollo-server');
 const merge = require('lodash/merge');
 const { GraphQLJSONObject } = require('graphql-type-json');
 
@@ -12,7 +11,7 @@ const comment = require('./comment');
 const user = require('./user');
 
 // dataloaders
-const loaders = require('./loaders');
+const createLoaders = require('./loaders');
 
 // utilities
 const getCurrentUser = require('../utils/getCurrentUser');
@@ -38,36 +37,18 @@ module.exports = {
     user.resolvers
   ),
   subscriptions: {
-    onConnect: async connectionParams => {
-      const { users } = loaders();
-      const auth = connectionParams.authorization || '';
-      if (auth) {
-        const token = auth.split(' ')[1];
-        const currentUser = await getCurrentUser(token, users);
-        return { currentUser };
-      }
-      throw new AuthenticationError('Missing authorization token');
+    onConnect: async () => {
+      // handle authentication for requests made via websocket
     }
   },
-  context: async ({ req, connection }) => {
-    const { users } = loaders();
-    let currentUser = null;
-    let token = null;
-    try {
-      if (connection) {
-        // get currentUser over websocket
-        currentUser = connection.context.currentUser;
-      } else {
-        // get the token over http
-        const auth = req.headers.authorization || '';
-        token = auth && auth.split(' ')[1];
-        currentUser = token && (await getCurrentUser(token, users));
-      }
-    } catch (error) {
-      console.log('Error while getting current user!', error);
-      throw error;
-    }
+  context: async ({ req, res }) => {
+    const loaders = createLoaders();
+    let currentUser = req.userId
+      ? await getCurrentUser(req.userId, loaders.users)
+      : null;
     return {
+      req,
+      res,
       currentUser,
       models: {
         Plan: plan.model,
@@ -79,7 +60,7 @@ module.exports = {
         User: user.model.User,
         BlacklistedToken: user.model.BlacklistedToken
       },
-      loaders: { users }
+      loaders
     };
   },
   cors: { origin: '*', credentials: true }
