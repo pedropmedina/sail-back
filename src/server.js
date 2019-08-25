@@ -1,6 +1,5 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { createServer } = require('http');
 const { ApolloServer } = require('apollo-server-express');
@@ -21,7 +20,6 @@ const apiConfig = require('./api');
 // express app
 const app = express();
 
-app.use(cors());
 app.use(cookieParser());
 
 app.use(async (req, res, next) => {
@@ -72,7 +70,18 @@ app.use(async (req, res, next) => {
 
 // instantiate server and pass in config object with typeDefs, resolvers, and ctx
 const server = new ApolloServer(apiConfig);
-server.applyMiddleware({ app });
+
+// cors options
+const corsOptions = {
+  origin: true,
+  credentials: true
+};
+
+// apply express app with options to apollo server
+server.applyMiddleware({
+  app,
+  cors: corsOptions
+});
 
 const httpServer = createServer(app);
 server.installSubscriptionHandlers(httpServer);

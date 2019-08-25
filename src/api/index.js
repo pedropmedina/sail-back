@@ -64,6 +64,5 @@ module.exports = {
       },
       loaders
     };
-  },
-  cors: { origin: '*', credentials: true }
+  }
 };
