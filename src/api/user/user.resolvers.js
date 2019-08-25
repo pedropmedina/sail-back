@@ -82,8 +82,7 @@ const loginUser = async (
 // logout user and blacklist token
 const blacklistTokens = async (_, __, { models, req }) => {
   try {
-    const { accessToken, refreshToken } = getCookies(req);
-    await new models.BlacklistedToken({ token: accessToken }).save();
+    const { refreshToken } = getCookies(req);
     await new models.BlacklistedToken({ token: refreshToken }).save();
     return true;
   } catch (error) {

@@ -11,7 +11,7 @@ const db = mongoose
     useCreateIndex: true,
     useFindAndModify: false
   })
-  .then(() => console.log('🗄 db is connected'))
+  .then(() => console.log('🗄  db is connected'))
   .catch(err => console.log('Error while connecting to db', err));
 
 module.exports = db;
