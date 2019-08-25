@@ -43,9 +43,11 @@ module.exports = {
   },
   context: async ({ req, res }) => {
     const loaders = createLoaders();
-    let currentUser = req.userId
-      ? await getCurrentUser(req.userId, loaders.users)
-      : null;
+    let currentUser =
+      req && req.userId
+        ? await getCurrentUser(req.userId, loaders.users)
+        : null;
+
     return {
       req,
       res,
