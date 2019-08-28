@@ -12,7 +12,7 @@ const PIN_DELETED = 'PIN_DELETED';
 const getPins = async (_, __, { models }) => {
   const pins = await models.Pin.find({})
     .populate('author')
-    .populate('comments')
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
   return pins;
 };

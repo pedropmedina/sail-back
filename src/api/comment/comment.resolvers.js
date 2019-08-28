@@ -52,7 +52,7 @@ const createComment = grantOwnerAcces(
         { $push: { comments: comment._id } },
         { new: true }
       )
-        .populate('comments')
+        .populate({ path: 'comments', populate: 'author' })
         .populate('author')
         .exec();
 
@@ -84,7 +84,7 @@ const updateComment = grantOwnerAcces(
         .exec();
 
       const pin = await models.Pin.findById(pinId)
-        .populate('comments')
+        .populate({ path: 'comments', populate: 'author' })
         .populate('author')
         .exec();
 
@@ -115,7 +115,10 @@ const deleteComment = grantOwnerAcces(
           $pull: { comments: { $in: [commentId] } }
         },
         { new: true }
-      );
+      )
+        .populate({ path: 'comments', populate: 'author' })
+        .populate('author')
+        .exec();
       pubsub.publish(COMMENT_DELETED, { commentDeleted: pin });
       return comment;
     } catch (error) {
