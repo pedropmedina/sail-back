@@ -18,7 +18,9 @@ const getPins = async (_, __, { models }) => {
 };
 
 const getPin = async (_, { pinId }, { models }) => {
-  const pin = await models.Pin.findById(pinId)
+  const pin = await models.Pin.findOne({
+    $or: [{ _id: pinId }, { mbxId: pinId }]
+  })
     .populate('author')
     .populate('comments')
     .exec();

@@ -1,5 +1,6 @@
 type Pin {
   _id: ID!
+  mbxId: ID!
   title: String!
   content: String!
   image: String!
