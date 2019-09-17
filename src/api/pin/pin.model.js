@@ -5,8 +5,8 @@ const Comment = require('../comment/comment.model');
 
 const pinSchema = new Schema(
   {
-    title: { type: String, index: true },
-    mbxId: { type: String, index: true },
+    title: { type: String, index: true, required: true },
+    mbxId: { type: String, index: true, required: true },
     content: String,
     image: String,
     latitude: Number,
