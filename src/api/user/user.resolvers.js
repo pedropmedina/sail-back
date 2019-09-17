@@ -59,8 +59,8 @@ const loginUser = async (
       })
       .populate('likedPins')
       .populate('friends')
-      .populate({ path: 'sentRequests', populate: { path: 'to' } })
-      .populate({ path: 'receivedRequests', populate: { path: 'to' } })
+      .populate({path: 'sentRequests', populate: { path: 'author'}})
+      .populate({path: 'receivedRequests', populate: { path: 'author'}})
       .exec();
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
@@ -99,8 +99,8 @@ const me = authorize(async (_, __, { models, currentUser }) => {
     { path: 'myPins', populate: { path: 'comments' } },
     { path: 'likedPins' },
     { path: 'friends' },
-    { path: 'sentRequests', populate: { path: 'to' } },
-    { path: 'receivedRequests', populate: { path: 'to' } }
+    { path: 'sentRequests', populate: { path: 'author' } },
+    { path: 'receivedRequests', populate: { path: 'author' } }
   ];
   return await models.User.populate(currentUser, opts);
 });

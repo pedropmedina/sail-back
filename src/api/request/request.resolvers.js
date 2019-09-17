@@ -21,7 +21,7 @@ const _hasSentReq = (userDoc, toUserId, reqType, cb) => {
 };
 
 const _checkForExistingFriendReq = async (input, currentUser, models) => {
-  const toUser = await models.User.findById(input.to)
+  const toUser = await models.User.findOne({ email: input.to })
     .populate('receivedRequests')
     .exec();
   const fromUser = await models.User.populate(currentUser, 'sentRequests');
@@ -31,13 +31,13 @@ const _checkForExistingFriendReq = async (input, currentUser, models) => {
     currentUser._id,
     'FRIEND'
   );
-  const existingSentReq = _hasSentReq(fromUser, input.to, 'FRIEND');
+  const existingSentReq = _hasSentReq(fromUser, toUser._id, 'FRIEND');
 
   const alreadyFriends = areFriends(
     toUser.friends,
     fromUser.friends,
     currentUser._id,
-    input.to
+    toUser._id
   );
 
   if (alreadyFriends) {
@@ -52,7 +52,7 @@ const _checkForExistingFriendReq = async (input, currentUser, models) => {
 };
 
 const _checkForExistingInviteReq = async (input, currentUser, models) => {
-  const toUser = await models.User.findById(input.to)
+  const toUser = await models.User.findOne({ email: input.to })
     .populate('receivedRequests')
     .exec();
   const fromUser = await models.User.populate(currentUser, 'sentRequests');
@@ -62,7 +62,7 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
     toUser.friends,
     fromUser.friends,
     currentUser._id,
-    input.to
+    toUser._id
   );
 
   if (!isFriend) {
@@ -77,7 +77,7 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
   );
   const existingSentReq = _hasSentReq(
     fromUser,
-    input.to,
+    toUser._id,
     'INVITE',
     req => req.plan.toString() === input.plan.toString()
   );
@@ -105,7 +105,6 @@ const getRequest = authorize(async (_, { reqId }, { models }) => {
   try {
     return await models.Request.findById(reqId)
       .populate('author')
-      .populate('to')
       .exec();
   } catch (error) {
     console.error('Error while getting invite ', error);
@@ -137,11 +136,14 @@ const createRequest = authorize(
       await currentUser.save();
       // find users to whom req has been sent and
       // push request into their receivedRequest's array
-      await models.User.findByIdAndUpdate(req.to, {
-        $push: { receivedRequests: req._id }
-      });
+      await models.User.findOneAndUpdate(
+        { email: req.to },
+        {
+          $push: { receivedRequests: req._id }
+        }
+      );
       // return req with populated author
-      const populatePaths = [{ path: 'author' }, { path: 'to' }];
+      const populatePaths = [{ path: 'author' }];
       return await models.Request.populate(req, populatePaths);
     } catch (error) {
       console.error('Error while creating invite ', error);
@@ -159,7 +161,6 @@ const updateRequest = authorize(
       }
       // find the request that needs to be updated
       let req = await models.Request.findById(reqId)
-        .populate('to')
         .populate('author')
         .exec();
       // if currentUser == req.to
@@ -179,7 +180,7 @@ const updateRequest = authorize(
       // and if req's status === DENIED
       // 1 - remove req from currentUser.receivedRequests
 
-      if (currentUser._id.toString() === req.to._id.toString()) {
+      if (currentUser.email === req.to) {
         req.status = status;
         if (req.reqType === 'FRIEND') {
           if (req.status === 'ACCEPTED') {
@@ -215,10 +216,7 @@ const updateRequest = authorize(
           }
         }
         req = await req.save();
-        req = await models.Request.populate(req, [
-          { path: 'to' },
-          { path: 'author' }
-        ]);
+        req = await models.Request.populate(req, [{ path: 'author' }]);
       }
       return req;
     } catch (error) {
@@ -278,11 +276,19 @@ module.exports = {
       }
     }
   },
+  FriendRequest: {
+    to: async (root, _, { models }) => {
+      return await models.User.findOne({ email: root.to }).exec();
+    }
+  },
   InviteRequest: {
     plan: async ({ plan, reqType }, _, { models }) => {
       if (reqType === 'INVITE') {
         return await models.Plan.findById(plan).exec();
       }
+    },
+    to: async (root, _, { models }) => {
+      return await models.User.findOne({ email: root.to }).exec();
     }
   }
 };
