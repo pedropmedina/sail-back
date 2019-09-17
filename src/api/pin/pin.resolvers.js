@@ -9,23 +9,29 @@ const PIN_CREATED = 'PIN_CREATED';
 const PIN_UPDATED = 'PIN_UPDATED';
 const PIN_DELETED = 'PIN_DELETED';
 
-const getPins = async (_, __, { models }) => {
+const getPins = authorize(async (_, __, { models }) => {
   const pins = await models.Pin.find({})
     .populate('author')
     .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
   return pins;
-};
+});
 
-const getPin = async (_, { pinId }, { models }) => {
-  const pin = await models.Pin.findOne({
-    $or: [{ _id: pinId }, { mbxId: pinId }]
-  })
+const getPin = authorize(async (_, { pinId }, { models }) => {
+  const pin = await models.Pin.findById(pinId)
     .populate('author')
     .populate('comments')
     .exec();
   return pin;
-};
+});
+
+const getPinByCoords = authorize(async (_, { input }, { models }) => {
+  const { longitude, latitude } = input;
+  return await models.Pin.findOne({ longitude, latitude })
+    .populate('author')
+    .populate('comments')
+    .exec();
+});
 
 // two things to have in mind when creating a pin:
 // 1 - the author is the same user found in ctx.
@@ -75,7 +81,8 @@ const deletePin = authorize(async (_, { pinId }, { models, currentUser }) => {
 module.exports = {
   Query: {
     getPins,
-    getPin
+    getPin,
+    getPinByCoords
   },
   Mutation: {
     createPin,
