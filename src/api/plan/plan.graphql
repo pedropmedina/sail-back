@@ -17,18 +17,19 @@ input CreatePlanInput {
   description: String!
   location: ID!
   date: String!
-  invites: [ID]!
+  invites: [String]!
 }
 
 input UpdatePlanInput {
   _id: ID!
-  invites: [ID]
+  invites: [String]
   media: [String]
   private: Boolean
 }
 
 extend type Query {
-  getPlan(planId: ID!): Pin!
+  getPlan(planId: ID!): Plan!
+  getPlans: [Plan]!
 }
 extend type Mutation {
   createPlan(input: CreatePlanInput!): Plan!

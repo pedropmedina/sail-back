@@ -35,7 +35,7 @@ type InviteRequest implements Request {
 }
 
 input CreateRequestInput {
-  to: ID!
+  to: String!
   status: STATUSES = PENDING
   reqType: REQUEST_TYPE!
   plan: ID

@@ -5,15 +5,23 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
   try {
     const plan = await models.Plan.finById(planId)
       .populate({ path: 'location', populate: { path: 'comments' } })
-      .populate('invites')
-      .populate('participants')
       .populate('chat')
+      .populate('participants')
       .populate('author')
       .exec();
     return plan;
   } catch (error) {
     console.error('Error while getting plan', error);
     throw error;
+  }
+});
+
+const getPlans = authorize(async (_, __, { models, currentUser }) => {
+  try {
+    // code here
+    models.Plan.find({ participants: { $in: [currentUser._id] } }).exec();
+  } catch (error) {
+    console.log(error('Error getting plan.'));
   }
 });
 
@@ -26,7 +34,7 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
     await plan.save();
     const opts = [
       { path: 'location', populate: 'comments' },
-      { path: 'invites' },
+      { path: 'participants' },
       { path: 'author' }
     ];
     plan = await models.Plan.populate(plan, opts);
@@ -42,9 +50,8 @@ const updatePlan = authorize(async (_, { input }, { models }) => {
     const { _id, ...update } = input;
     const plan = await models.Plan.findByIdAndUpdate(_id, update, { new: true })
       .populate({ path: 'location', populate: 'comments' })
-      .populate('invites')
-      .populate('participants')
       .populate('chat')
+      .populate('participants')
       .populate('author')
       .exec();
     return plan;
@@ -75,11 +82,17 @@ const deletePlan = authorize(async (_, { _id }, { models, currentUser }) => {
 
 module.exports = {
   Query: {
-    getPlan
+    getPlan,
+    getPlans
   },
   Mutation: {
     createPlan,
     updatePlan,
     deletePlan
+  },
+  Plan: {
+    invites: (root, _, { models }) => {
+      return models.User.find({ email: { $in: root.invites } }).exec();
+    }
   }
 };

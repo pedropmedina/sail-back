@@ -12,7 +12,7 @@ const planSchema = new Schema(
     description: { type: String, required: true },
     location: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
     date: { type: Schema.Types.Date, required: true },
-    invites: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    invites: [{ type: String, required: true }],
     participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     chat: { type: Schema.Types.ObjectId, ref: 'Conversation' },
     media: [String],
@@ -38,20 +38,20 @@ planSchema.pre('save', async function() {
   // push author into plan's participants' array
   this.participants.push(this.author);
 
-  for (let inviteeId of this.invites) {
+  for (let inviteeEmail of this.invites) {
     // check if invitee is friend
-    const invitee = await User.findById(inviteeId).exec();
+    const invitee = await User.findOne({ email: inviteeEmail }).exec();
     const isFriend = areFriends(
       invitee.friends,
       author.friends,
       this.author,
-      inviteeId
+      invitee._id
     );
 
     // instantiate new request and persist in db
     if (isFriend) {
       const req = await new Request({
-        to: inviteeId,
+        to: inviteeEmail,
         reqType: 'INVITE',
         plan: this._id,
         author: this.author
