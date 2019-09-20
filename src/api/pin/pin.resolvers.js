@@ -27,10 +27,11 @@ const getPin = authorize(async (_, { pinId }, { models }) => {
 
 const getPinByCoords = authorize(async (_, { input }, { models }) => {
   const { longitude, latitude } = input;
-  return await models.Pin.findOne({ longitude, latitude })
+  const pin = await models.Pin.findOne({ longitude, latitude })
     .populate('author')
     .populate('comments')
     .exec();
+  return pin;
 });
 
 // two things to have in mind when creating a pin:

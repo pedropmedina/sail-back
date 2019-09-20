@@ -33,7 +33,7 @@ input GetPinByCoordsInput {
 type Query {
   getPins: [Pin]!
   getPin(pinId: ID!): Pin!
-  getPinByCoords(input: GetPinByCoordsInput!): Pin!
+  getPinByCoords(input: GetPinByCoordsInput!): Pin
 }
 
 type Mutation {
