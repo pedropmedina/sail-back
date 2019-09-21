@@ -1,0 +1,5 @@
+union Result = Plan | Pin | User
+
+extend type Query {
+  search(searchText: String!): [Result]
+}

@@ -8,8 +8,8 @@ const areFriends = require('../../utils/areFriends');
 
 const planSchema = new Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String, required: true },
+    title: { type: String, required: true, text: true },
+    description: { type: String, required: true, text: true },
     location: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
     date: { type: Schema.Types.Date, required: true },
     invites: [{ type: String, required: true }],

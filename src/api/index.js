@@ -9,6 +9,7 @@ const request = require('./request');
 const pin = require('./pin');
 const comment = require('./comment');
 const user = require('./user');
+const search = require('./search');
 
 // dataloaders
 const createLoaders = require('./loaders');
@@ -24,7 +25,8 @@ module.exports = {
     request.typeDefs,
     pin.typeDefs,
     comment.typeDefs,
-    user.typeDefs
+    user.typeDefs,
+    search.typeDefs
   ].join(' '),
   resolvers: merge(
     { JSONObject: GraphQLJSONObject },
@@ -34,7 +36,8 @@ module.exports = {
     request.resolvers,
     pin.resolvers,
     comment.resolvers,
-    user.resolvers
+    user.resolvers,
+    search.resolvers
   ),
   subscriptions: {
     onConnect: async () => {

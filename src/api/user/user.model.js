@@ -6,7 +6,13 @@ const Pin = require('../pin/pin.model');
 
 const userSchema = new Schema(
   {
-    username: { type: String, unique: true, trim: true, index: true },
+    username: {
+      type: String,
+      unique: true,
+      trim: true,
+      index: true,
+      text: true
+    },
     email: {
       type: String,
       required: true,
@@ -24,7 +30,7 @@ const userSchema = new Schema(
       required: true,
       minlength: 6
     },
-    name: String,
+    name: { type: String, text: true },
     address: {
       street1: String,
       street2: String,
