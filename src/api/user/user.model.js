@@ -31,12 +31,10 @@ const userSchema = new Schema(
       minlength: 6
     },
     name: { type: String, index: true, text: true },
+    about: String,
     address: {
-      street1: String,
-      street2: String,
-      city: String,
-      state: String,
-      zip: String
+      longitude: Number,
+      latitude: Number
     },
     image: String,
     myPlans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
