@@ -30,7 +30,7 @@ const userSchema = new Schema(
       required: true,
       minlength: 6
     },
-    name: { type: String, text: true },
+    name: { type: String, index: true, text: true },
     address: {
       street1: String,
       street2: String,

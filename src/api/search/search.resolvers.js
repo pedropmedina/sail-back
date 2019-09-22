@@ -1,4 +1,6 @@
-const search = async (_, { searchText }, { models }) => {
+const authorize = require('../../utils/authorize');
+
+const search = authorize(async (_, { searchText }, { models }) => {
   const plans = models.Plan.find({ $text: { $search: searchText } })
     .populate({ path: 'location', populate: { path: 'comments' } })
     .populate('chat')
@@ -26,11 +28,20 @@ const search = async (_, { searchText }, { models }) => {
 
   const results = await Promise.all([plans, pins, users]);
   return results.flat();
-};
+});
+
+const searchFriends = authorize(async (_, { searchText }, { models }) => {
+  const users = await models.User.find({ $text: { $search: searchText } })
+    .populate('friends')
+    .exec();
+
+  return users;
+});
 
 module.exports = {
   Query: {
-    search
+    search,
+    searchFriends
   },
   Result: {
     __resolveType(obj) {
