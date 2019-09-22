@@ -16,8 +16,8 @@ type User {
 }
 
 type Address {
-  longitude: Float!
-  latitude: Float!
+  longitude: Float
+  latitude: Float
 }
 
 input LoginUserInput {

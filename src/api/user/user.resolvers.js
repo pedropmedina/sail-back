@@ -2,6 +2,7 @@ const { AuthenticationError } = require('apollo-server');
 const bcrypt = require('bcryptjs');
 
 // utils
+const grantAdminAccess = require('../../utils/grantAdminAccess')
 const authorize = require('../../utils/authorize');
 const createTokens = require('../../utils/createTokens');
 const { setCookies, getCookies } = require('../../utils/handleCookies');
@@ -105,7 +106,7 @@ const me = authorize(async (_, __, { models, currentUser }) => {
 });
 
 // allow admins to access users' info
-const getUsers = authorize(async (_, __, { models }) => {
+const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
     const users = await models.User.find({})
       .populate('myPlans')

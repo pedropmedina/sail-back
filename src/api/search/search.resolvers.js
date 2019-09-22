@@ -30,7 +30,14 @@ const search = authorize(async (_, { searchText }, { models }) => {
   return results.flat();
 });
 
-const searchFriends = authorize(async (_, { searchText }, { models }) => {
+const searchFriends = authorize(async (_, __, { models, currentUser }) => {
+  const user = await models.User.populate(currentUser, [
+    { path: 'friends', populate: 'friends' }
+  ]);
+  return user.friends;
+});
+
+const searchPeople = authorize(async (_, { searchText }, { models }) => {
   const users = await models.User.find({ $text: { $search: searchText } })
     .populate('friends')
     .exec();
@@ -41,7 +48,8 @@ const searchFriends = authorize(async (_, { searchText }, { models }) => {
 module.exports = {
   Query: {
     search,
-    searchFriends
+    searchFriends,
+    searchPeople
   },
   Result: {
     __resolveType(obj) {

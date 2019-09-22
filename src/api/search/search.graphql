@@ -2,5 +2,6 @@ union Result = Plan | Pin | User
 
 extend type Query {
   search(searchText: String!): [Result]
-  searchFriends(searchText: String!): [User]!
+  searchPeople(searchText: String!): [User]!
+  searchFriends: [User]!
 }
