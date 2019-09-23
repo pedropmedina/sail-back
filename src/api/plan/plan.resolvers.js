@@ -18,13 +18,15 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
 
 const getPlans = authorize(async (_, __, { models, currentUser }) => {
   try {
-    const plan = models.Plan.find({ participants: { $in: [currentUser._id] } })
+    const plans = await models.Plan.find({
+      participants: { $in: [currentUser._id] }
+    })
       .populate({ path: 'location', populate: { path: 'comments' } })
       .populate('chat')
       .populate('participants')
       .populate('author')
       .exec();
-    return plan;
+    return plans;
   } catch (error) {
     console.log(error('Error getting plan.'));
   }

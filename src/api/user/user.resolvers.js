@@ -2,7 +2,7 @@ const { AuthenticationError } = require('apollo-server');
 const bcrypt = require('bcryptjs');
 
 // utils
-const grantAdminAccess = require('../../utils/grantAdminAccess')
+const grantAdminAccess = require('../../utils/grantAdminAccess');
 const authorize = require('../../utils/authorize');
 const createTokens = require('../../utils/createTokens');
 const { setCookies, getCookies } = require('../../utils/handleCookies');
@@ -59,8 +59,8 @@ const loginUser = async (
       })
       .populate('likedPins')
       .populate('friends')
-      .populate({path: 'sentRequests', populate: { path: 'author'}})
-      .populate({path: 'receivedRequests', populate: { path: 'author'}})
+      .populate({ path: 'sentRequests', populate: { path: 'author' } })
+      .populate({ path: 'receivedRequests', populate: { path: 'author' } })
       .exec();
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
@@ -110,7 +110,10 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
     const users = await models.User.find({})
       .populate('myPlans')
-      .populate('inPlans')
+      .populate({
+        path: 'inPlans',
+        populate: [{ path: 'participants' }, { path: 'location' }]
+      })
       .populate({
         path: 'myPins',
         populate: { path: 'comments' }
@@ -124,11 +127,16 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
   }
 });
 
-const getUser = authorize(async (_, { userId }, { models }) => {
+const getUser = authorize(async (_, { userId, username }, { models }) => {
   try {
-    const user = await models.User.findById(userId)
+    const user = await models.User.findOne({
+      $or: [{ _id: userId }, { username }]
+    })
       .populate('myPlans')
-      .populate('inPlans')
+      .populate({
+        path: 'inPlans',
+        populate: [{ path: 'participants' }, { path: 'location' }]
+      })
       .populate({
         path: 'myPins',
         populate: { path: 'comments' }
