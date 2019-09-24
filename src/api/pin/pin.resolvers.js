@@ -20,7 +20,7 @@ const getPins = authorize(async (_, __, { models }) => {
 const getPin = authorize(async (_, { pinId }, { models }) => {
   const pin = await models.Pin.findById(pinId)
     .populate('author')
-    .populate('comments')
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
   return pin;
 });
@@ -29,7 +29,7 @@ const getPinByCoords = authorize(async (_, { input }, { models }) => {
   const { longitude, latitude } = input;
   const pin = await models.Pin.findOne({ longitude, latitude })
     .populate('author')
-    .populate('comments')
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
   return pin;
 });
@@ -42,7 +42,10 @@ const createPin = authorize(async (_, args, { models, currentUser }) => {
     ...args.input,
     author: currentUser._id
   }).save();
-  const pinCreated = await models.Pin.populate(newPin, 'author');
+  const pinCreated = await models.Pin.populate(newPin, [
+    { path: 'author' },
+    { path: 'comments', populate: 'author' }
+  ]);
   // push pin into current user's pins array
   currentUser.myPins.push(pinCreated._id);
   await currentUser.save();
@@ -58,7 +61,7 @@ const updatePin = authorize(async (_, args, { models, currentUser }) => {
     { new: true }
   )
     .populate('author')
-    .populate('comments')
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
   pubsub.publish(PIN_UPDATED, { pinUpdated });
   return pinUpdated;
@@ -72,7 +75,7 @@ const deletePin = authorize(async (_, { pinId }, { models, currentUser }) => {
     author: currentUser._id
   })
     .populate('author')
-    .populate('comments')
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
   await pinDeleted.remove();
   pubsub.publish(PIN_DELETED, { pinDeleted });
