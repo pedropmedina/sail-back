@@ -1,7 +1,6 @@
 const { ApolloError } = require('apollo-server');
 const authorize = require('../../utils/authorize');
 const areFriends = require('../../utils/areFriends');
-const grantAdminAccess = require('../../utils/grantAdminAccess');
 
 const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
   return userDoc.receivedRequests.some(req => {
@@ -90,9 +89,11 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
   }
 };
 
-const getRequests = grantAdminAccess(async (_, __, { models }) => {
+const getRequests = authorize(async (_, __, { models, currentUser }) => {
   try {
-    return await models.Request.find({})
+    return await models.Request.find({
+      $or: [{ author: currentUser._id }, { to: currentUser.email }]
+    })
       .populate('author')
       .exec();
   } catch (error) {
