@@ -89,18 +89,36 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
   }
 };
 
-const getRequests = authorize(async (_, __, { models, currentUser }) => {
-  try {
-    return await models.Request.find({
-      $or: [{ author: currentUser._id }, { to: currentUser.email }]
-    })
-      .populate('author')
-      .exec();
-  } catch (error) {
-    console.error('Error while getting invites', error);
-    throw error;
+const getRequests = authorize(
+  async (_, { reqType }, { models, currentUser }) => {
+    try {
+      const { _id, email } = currentUser;
+      let requests;
+
+      switch (reqType) {
+        case 'FRIEND':
+        case 'INVITE':
+          requests = await models.Request.find({
+            $and: [{ reqType }, { $or: [{ author: _id }, { to: email }] }]
+          })
+            .populate('author')
+            .exec();
+          break;
+        default:
+          requests = await models.Request.find({
+            $or: [{ author: currentUser._id }, { to: currentUser.email }]
+          })
+            .populate('author')
+            .exec();
+          break;
+      }
+      return requests;
+    } catch (error) {
+      console.error('Error while getting invites', error);
+      throw error;
+    }
   }
-});
+);
 
 const getRequest = authorize(async (_, { reqId }, { models }) => {
   try {

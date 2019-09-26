@@ -15,6 +15,8 @@ interface Request {
   status: STATUSES!
   reqType: REQUEST_TYPE!
   author: User!
+  createdAt: String!
+  updatedAt: String!
 }
 
 type FriendRequest implements Request {
@@ -23,6 +25,8 @@ type FriendRequest implements Request {
   status: STATUSES!
   reqType: REQUEST_TYPE!
   author: User!
+  createdAt: String!
+  updatedAt: String!
 }
 
 type InviteRequest implements Request {
@@ -32,6 +36,8 @@ type InviteRequest implements Request {
   reqType: REQUEST_TYPE!
   author: User!
   plan: Plan!
+  createdAt: String!
+  updatedAt: String!
 }
 
 input CreateRequestInput {
@@ -47,7 +53,7 @@ input UpdateRequestInput {
 }
 
 extend type Query {
-  getRequests: [Request]!
+  getRequests(reqType: REQUEST_TYPE): [Request]!
   getRequest(reqId: ID!): Request!
 }
 
