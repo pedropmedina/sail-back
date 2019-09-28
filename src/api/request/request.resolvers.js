@@ -106,7 +106,7 @@ const getRequests = authorize(
           break;
         default:
           requests = await models.Request.find({
-            $or: [{ author: currentUser._id }, { to: currentUser.email }]
+            $or: [{ author: _id }, { to: email }]
           })
             .populate('author')
             .exec();
@@ -251,8 +251,7 @@ const deleteRequest = authorize(
       // delete the request if currenUser is author and status is not PENDING
       const req = await models.Request.findOneAndDelete({
         _id: reqId,
-        author: currentUser._id,
-        status: { $ne: 'PENDING' }
+        author: currentUser._id
       }).exec();
 
       if (!req) {
