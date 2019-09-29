@@ -60,5 +60,5 @@ extend type Query {
 extend type Mutation {
   createRequest(input: CreateRequestInput!): Request!
   updateRequest(input: UpdateRequestInput!): Request!
-  deleteRequest(reqId: ID!): Boolean!
+  deleteRequest(reqId: ID!): Request!
 }

@@ -252,7 +252,9 @@ const deleteRequest = authorize(
       const req = await models.Request.findOneAndDelete({
         _id: reqId,
         author: currentUser._id
-      }).exec();
+      })
+        .populate('author')
+        .exec();
 
       if (!req) {
         throw new ApolloError('Unauthorized action!');
@@ -264,7 +266,7 @@ const deleteRequest = authorize(
           $pull: { sentRequests: req._id }
         })
         .exec();
-      return true;
+      return req;
     } catch (error) {
       console.error('Error while deleting invite ', error);
       throw error;
