@@ -43,21 +43,20 @@ const createComment = grantOwnerAcces(
         author: currentUser._id
       }).save();
       // populate comment's fields
-      let commentCreated = await models.Comment.populate(comment, 'pin');
-      commentCreated = await models.Comment.populate(commentCreated, 'author');
+      const commentCreated = await models.Comment.populate(comment, [
+        { path: 'pin' },
+        { path: 'author' }
+      ]);
 
       // update pin by pushing comment._id into comments' array
-      const pin = await models.Pin.findOneAndUpdate(
-        { _id: pinId, author: currentUser._id },
+      await models.Pin.findByIdAndUpdate(
+        pinId,
         { $push: { comments: comment._id } },
         { new: true }
-      )
-        .populate({ path: 'comments', populate: 'author' })
-        .populate('author')
-        .exec();
+      ).exec();
 
       // publish updated pin
-      pubsub.publish(COMMENT_CREATED, { commentCreated: pin });
+      pubsub.publish(COMMENT_CREATED, { commentCreated });
 
       return commentCreated;
     } catch (error) {
@@ -74,7 +73,7 @@ const updateComment = grantOwnerAcces(
     { models, currentUser }
   ) => {
     try {
-      const comment = await models.Comment.findOneAndUpdate(
+      const commentUpdated = await models.Comment.findOneAndUpdate(
         { _id: commentId, pin: pinId, author: currentUser._id },
         update,
         { new: true }
@@ -83,13 +82,9 @@ const updateComment = grantOwnerAcces(
         .populate('author')
         .exec();
 
-      const pin = await models.Pin.findById(pinId)
-        .populate({ path: 'comments', populate: 'author' })
-        .populate('author')
-        .exec();
+      pubsub.publish(COMMENT_UPDATED, { commentUpdated });
 
-      pubsub.publish(COMMENT_UPDATED, { commentUpdated: pin });
-      return comment;
+      return commentUpdated;
     } catch (error) {
       console.error('Error while updating comment: ', error);
       throw error;
@@ -101,7 +96,7 @@ const deleteComment = grantOwnerAcces(
   async (_, { input: { commentId, pinId } }, { models, currentUser }) => {
     try {
       // delete matching comment
-      const comment = await models.Comment.findOneAndDelete({
+      const commentDeleted = await models.Comment.findOneAndDelete({
         _id: commentId,
         pin: pinId,
         author: currentUser._id
@@ -109,18 +104,17 @@ const deleteComment = grantOwnerAcces(
         .populate('pin')
         .populate('author');
       // find pin containing comment and pull comment's id from comments' array
-      const pin = await models.Pin.findByIdAndUpdate(
+      await models.Pin.findByIdAndUpdate(
         pinId,
         {
           $pull: { comments: { $in: [commentId] } }
         },
         { new: true }
-      )
-        .populate({ path: 'comments', populate: 'author' })
-        .populate('author')
-        .exec();
-      pubsub.publish(COMMENT_DELETED, { commentDeleted: pin });
-      return comment;
+      );
+
+      pubsub.publish(COMMENT_DELETED, { commentDeleted });
+
+      return commentDeleted;
     } catch (error) {
       console.error(`Error while deleting comment with id ${commentId}`, error);
       throw error;

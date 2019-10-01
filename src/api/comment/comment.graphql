@@ -34,7 +34,7 @@ extend type Mutation {
 }
 
 extend type Subscription {
-  commentCreated: Pin!
-  commentUpdated: Pin!
-  commentDeleted: Pin!
+  commentCreated: Comment!
+  commentUpdated: Comment!
+  commentDeleted: Comment!
 }
