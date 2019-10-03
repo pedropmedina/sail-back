@@ -37,7 +37,10 @@ const signupUser = async (
     const cookiesOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
     setCookie(res, 'refresh-token', refreshToken, cookiesOptions);
 
-    return user;
+    return {
+      token: createToken({ userId: user._id }, 'access'),
+      user
+    };
   } catch (error) {
     console.error('Error while signing up: ', error.message);
     throw error;
@@ -80,7 +83,10 @@ const loginUser = async (
     const cookiesOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
     setCookie(res, 'refresh-token', refreshToken, cookiesOptions);
 
-    return user;
+    return {
+      token: createToken({ userId: user._id }, 'access'),
+      user
+    };
   } catch (error) {
     console.error('Error while logging user: ', error.message);
     throw error;
@@ -196,6 +202,11 @@ const likePin = authorize(async (_, { pinId }, { currentUser }) => {
   return true;
 });
 
+const logoutUser = (_, __, { res }) => {
+  res.clearCookie('refresh-token', { path: '/' });
+  return true;
+};
+
 module.exports = {
   Query: {
     me,
@@ -205,6 +216,7 @@ module.exports = {
   Mutation: {
     signupUser,
     loginUser,
+    logoutUser,
     updateUser,
     deleteUser,
     likePin

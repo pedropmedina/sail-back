@@ -40,15 +40,25 @@ module.exports = {
     search.resolvers
   ),
   subscriptions: {
-    onConnect: async () => {
+    onConnect: async connectionParams => {
       // handle authentication for requests made via websocket
+      const loaders = createLoaders();
+      const token = connectionParams.authToken;
+      let currentUser = null;
+      if (token) {
+        currentUser = await getCurrentUser(token, loaders.users);
+      }
+      return { currentUser };
     }
   },
   context: async ({ req, res }) => {
     const loaders = createLoaders();
     let currentUser =
-      req && req.authorization
-        ? await getCurrentUser(req.authorization.split(' ')[1], loaders.users)
+      req && req.headers.authorization
+        ? await getCurrentUser(
+            req.headers.authorization.split(' ')[1],
+            loaders.users
+          )
         : null;
 
     return {

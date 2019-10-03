@@ -8,8 +8,8 @@ const areFriends = require('../../utils/areFriends');
 
 const planSchema = new Schema(
   {
-    title: { type: String, required: true, text: true },
-    description: { type: String, required: true, text: true },
+    title: { type: String, required: true },
+    description: { type: String, required: true },
     location: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
     date: { type: Schema.Types.Date, required: true },
     invites: [{ type: String, required: true }],
@@ -21,6 +21,8 @@ const planSchema = new Schema(
   },
   { timestamps: true }
 );
+
+planSchema.index({ title: 'text', description: 'text' });
 
 planSchema.pre('remove', async function() {
   await Conversation.findOneAndDelete({ plan: this._id }).exec();

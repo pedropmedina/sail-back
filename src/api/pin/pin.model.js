@@ -5,8 +5,8 @@ const Comment = require('../comment/comment.model');
 
 const pinSchema = new Schema(
   {
-    title: { type: String, index: true, required: true, text: true },
-    content: { type: String, text: true },
+    title: { type: String, index: true, required: true },
+    content: { type: String },
     image: String,
     latitude: Number,
     longitude: Number,
@@ -15,6 +15,8 @@ const pinSchema = new Schema(
   },
   { timestamps: true }
 );
+
+pinSchema.index({ title: 'text', content: 'text' });
 
 // remove all comments corresponding to pin upon deletion of pin
 pinSchema.pre('remove', async function() {

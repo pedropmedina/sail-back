@@ -1,6 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 const { createServer } = require('http');
 const { ApolloServer } = require('apollo-server-express');
 require('dotenv').config();
@@ -17,9 +18,16 @@ const setCookie = require('./utils/setCookie');
 // graphql config object
 const apiConfig = require('./api');
 
+// cors options
+const corsOptions = {
+  origin: true,
+  credentials: true
+};
+
 // express app
 const app = express();
 
+app.use(cors(corsOptions));
 app.use(cookieParser());
 
 app.post('/refresh_token', async (req, res) => {
@@ -66,16 +74,10 @@ app.post('/refresh_token', async (req, res) => {
 // instantiate server and pass in config object with typeDefs, resolvers, and ctx
 const server = new ApolloServer(apiConfig);
 
-// cors options
-const corsOptions = {
-  origin: true,
-  credentials: true
-};
-
 // apply express app with options to apollo server
 server.applyMiddleware({
   app,
-  cors: corsOptions
+  cors: false
 });
 
 const httpServer = createServer(app);

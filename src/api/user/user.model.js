@@ -9,9 +9,7 @@ const userSchema = new Schema(
     username: {
       type: String,
       unique: true,
-      trim: true,
-      index: true,
-      text: true
+      trim: true
     },
     email: {
       type: String,
@@ -22,15 +20,14 @@ const userSchema = new Schema(
       validate: {
         validator: validator.isEmail,
         message: props => `${props.value} is not a valid email!`
-      },
-      index: true
+      }
     },
     password: {
       type: String,
       required: true,
       minlength: 6
     },
-    name: { type: String, index: true, text: true },
+    name: { type: String },
     about: String,
     address: {
       longitude: Number,
@@ -49,6 +46,8 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
+
+userSchema.index({ username: 'text', name: 'text' });
 
 // middleware in charge of removing corresponding pins to removed user
 // use pin.remove to trigger 'pre' hook upon removal of pin and delete all comments corresponding to each pin
