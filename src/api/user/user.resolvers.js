@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 // utils
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 const authorize = require('../../utils/authorize');
-const createTokens = require('../../utils/createTokens');
-const { setCookies, getCookies } = require('../../utils/handleCookies');
+const createToken = require('../../utils/createToken');
+const setCookie = require('../../utils/setCookie');
 
 // sign up new user
 const signupUser = async (
@@ -29,9 +29,13 @@ const signupUser = async (
     user = new models.User({ email, password: hash });
     await user.save();
 
-    // create tokens and set cookies
-    const tokens = createTokens(user._id);
-    setCookies(res, tokens);
+    // create refresh token and set new cookie
+    const refreshToken = createToken(
+      { userId: user._id, tokenVersion: user.tokenVersion },
+      'refresh'
+    );
+    const cookiesOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
+    setCookie(res, 'refresh-token', refreshToken, cookiesOptions);
 
     return user;
   } catch (error) {
@@ -68,26 +72,18 @@ const loginUser = async (
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new AuthenticationError('Wrong credentials.');
 
-    // create tokens and set cookies
-    const tokens = createTokens(user._id);
-    setCookies(res, tokens);
+    // create refresh token and set new cookie
+    const refreshToken = createToken(
+      { userId: user._id, tokenVersion: user.tokenVersion },
+      'refresh'
+    );
+    const cookiesOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
+    setCookie(res, 'refresh-token', refreshToken, cookiesOptions);
 
     return user;
   } catch (error) {
     console.error('Error while logging user: ', error.message);
     throw error;
-  }
-};
-
-// logout user and blacklist token
-const blacklistTokens = async (_, __, { models, req }) => {
-  try {
-    const { refreshToken } = getCookies(req);
-    await new models.BlacklistedToken({ token: refreshToken }).save();
-    return true;
-  } catch (error) {
-    console.error('Error while blacklisting token: ', error.message);
-    return false;
   }
 };
 
@@ -209,7 +205,6 @@ module.exports = {
   Mutation: {
     signupUser,
     loginUser,
-    blacklistTokens,
     updateUser,
     deleteUser,
     likePin

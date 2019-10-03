@@ -13,6 +13,7 @@ type User {
   sentRequests: [Request]!
   receivedRequests: [Request]!
   admin: Boolean!
+  tokenVersion: Int!
 }
 
 type Address {
@@ -48,7 +49,6 @@ extend type Mutation {
   signupUser(input: SignupUserInput!): User!
   loginUser(input: LoginUserInput!): User!
   logoutUser: Boolean!
-  blacklistTokens: Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(userId: ID!): User!
   likePin(pinId: ID!): Boolean!

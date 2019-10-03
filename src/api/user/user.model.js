@@ -44,14 +44,11 @@ const userSchema = new Schema(
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     sentRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
     receivedRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
-    admin: { type: Boolean, default: false }
+    admin: { type: Boolean, default: false },
+    tokenVersion: { type: Number, default: 0 }
   },
   { timestamps: true }
 );
-
-const blacklistedTokenSchema = new Schema({
-  token: { type: String, required: true, unique: true }
-});
 
 // middleware in charge of removing corresponding pins to removed user
 // use pin.remove to trigger 'pre' hook upon removal of pin and delete all comments corresponding to each pin
@@ -65,6 +62,7 @@ userSchema.pre('remove', async function() {
   }
 });
 
+// create default username from user's email upon signing up
 userSchema.pre('save', function(next) {
   if (this.isNew) {
     const username = this.email.split('@')[0];
@@ -75,12 +73,4 @@ userSchema.pre('save', function(next) {
 
 const User = mongoose.model('User', userSchema);
 
-const BlacklistedToken = mongoose.model(
-  'BlacklistedToken',
-  blacklistedTokenSchema
-);
-
-module.exports = {
-  User,
-  BlacklistedToken
-};
+module.exports = User;

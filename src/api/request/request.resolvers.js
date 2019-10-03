@@ -1,6 +1,14 @@
-const { ApolloError } = require('apollo-server');
+const { ApolloError, PubSub, withFilter } = require('apollo-server');
 const authorize = require('../../utils/authorize');
 const areFriends = require('../../utils/areFriends');
+
+// instantiate PubSub making asyncIterator and publish
+const pubsub = new PubSub();
+
+// subcriptions event names
+const REQUEST_CREATED = 'REQUEST_CREATED';
+const REQUEST_UPDATED = 'REQUEST_UPDATED';
+const REQUEST_DELETED = 'REQUEST_DELETED';
 
 const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
   return userDoc.receivedRequests.some(req => {
@@ -163,7 +171,10 @@ const createRequest = authorize(
       );
       // return req with populated author
       const populatePaths = [{ path: 'author' }];
-      return await models.Request.populate(req, populatePaths);
+      const requestCreated = await models.Request.populate(req, populatePaths);
+      // publish new request
+      pubsub.publish(REQUEST_CREATED, { requestCreated });
+      return requestCreated;
     } catch (error) {
       console.error('Error while creating invite ', error);
       throw error;
@@ -237,6 +248,7 @@ const updateRequest = authorize(
         req = await req.save();
         req = await models.Request.populate(req, [{ path: 'author' }]);
       }
+      pubsub.publish(REQUEST_UPDATED, { requestUpdated: req });
       return req;
     } catch (error) {
       console.error('Error while updating invite ', error);
@@ -266,6 +278,7 @@ const deleteRequest = authorize(
           $pull: { sentRequests: req._id }
         })
         .exec();
+      pubsub.publish(REQUEST_DELETED, { requestDeleted: req });
       return req;
     } catch (error) {
       console.error('Error while deleting invite ', error);
@@ -283,6 +296,24 @@ module.exports = {
     createRequest,
     updateRequest,
     deleteRequest
+  },
+  Subscription: {
+    requestCreated: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(REQUEST_CREATED),
+        (payload, variables, context, info) => {
+          console.log('this was called!!!!!!');
+          console.log({ payload, variables, context, info });
+          return true;
+        }
+      )
+    },
+    requestUpdated: {
+      subscribe: () => pubsub.asyncIterator(REQUEST_UPDATED)
+    },
+    requestDeleted: {
+      subscribe: () => pubsub.asyncIterator(REQUEST_DELETED)
+    }
   },
   Request: {
     __resolveType({ reqType }) {

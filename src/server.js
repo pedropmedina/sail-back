@@ -6,13 +6,13 @@ const { ApolloServer } = require('apollo-server-express');
 require('dotenv').config();
 require('./db');
 
-const createLoaders = require('./api/loaders');
+const User = require('./api/user/user.model');
 
-const createTokens = require('./utils/createTokens');
-const { setCookies, getCookies } = require('./utils/handleCookies');
-
-const accessSecret = process.env.ACCESS_JWT_SECRET;
 const refreshSecret = process.env.REFRESH_JWT_SECRET;
+
+const createToken = require('./utils/createToken');
+const getCookie = require('./utils/getCookie');
+const setCookie = require('./utils/setCookie');
 
 // graphql config object
 const apiConfig = require('./api');
@@ -22,50 +22,45 @@ const app = express();
 
 app.use(cookieParser());
 
-app.use(async (req, res, next) => {
-  // get cookies in request
-  const { accessToken, refreshToken } = getCookies(req);
-
-  // return early if both cookies have expired
-  if (!accessToken && !refreshToken) {
-    return next();
-  }
-
-  // check access token cookie expiration and skip remaining steps if valid
-  try {
-    const payload = jwt.verify(accessToken, accessSecret);
-    req.userId = payload.userId;
-    return next();
-  } catch (error) {
-    // move to the next line
-  }
-
-  // return early if refresh token has expired
+app.post('/refresh_token', async (req, res) => {
+  // check refresh token in cookies and return early if not found meaning
+  const refreshToken = getCookie(req, 'refresh-token');
   if (!refreshToken) {
-    return next();
+    return res.send({ ok: false, accessToken: '' });
   }
 
-  // check refresh token isn't blacklisted
+  // verify refresh token validity and asign payload, else return early
+  let payload = null;
   try {
-    const loaders = createLoaders();
-    const existingToken = await loaders.tokens.load(refreshToken);
-    if (existingToken) {
-      return next();
-    }
+    payload = jwt.verify(refreshToken, refreshSecret);
   } catch (error) {
-    // continue to the next line
+    console.log({ error });
+    return res.send({ ok: false, accessToken: '' });
   }
 
-  // check if refresh token is still vaild
-  try {
-    const payload = jwt.verify(refreshToken, refreshSecret);
-    const newTokens = createTokens(payload.userId);
-    setCookies(res, newTokens);
-    req.userId = payload.userId; // eslint-disable-line require-atomic-updates
-    next();
-  } catch (error) {
-    return next();
+  // get user with userId in payload and return early if no user found with given id
+  const { userId, tokenVersion } = payload;
+  const user = await User.findById(userId).exec();
+  if (!user) {
+    return res.send({ ok: false, accessToken: '' });
   }
+
+  // validate token by comparing it the current token version in user
+  if (user.tokenVersion !== tokenVersion) {
+    return res.send({ ok: false, accessToken: '' });
+  }
+
+  // create a new refresh token to exteding it validity for 7 more days
+  const newRefreshToken = createToken(
+    { userId: user._id, tokenVersion: user.tokenVersion },
+    'refresh'
+  );
+  const cookieOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
+  setCookie(res, 'refresh-token', newRefreshToken, cookieOptions);
+
+  // create new access token and return it to client
+  const accessToken = createToken({ userId }, 'access');
+  return res.send({ ok: true, accessToken });
 });
 
 // instantiate server and pass in config object with typeDefs, resolvers, and ctx

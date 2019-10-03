@@ -62,3 +62,9 @@ extend type Mutation {
   updateRequest(input: UpdateRequestInput!): Request!
   deleteRequest(reqId: ID!): Request!
 }
+
+extend type Subscription {
+  requestCreated(to: String): Request!
+  requestUpdated: Request!
+  requestDeleted: Request!
+}

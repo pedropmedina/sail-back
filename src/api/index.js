@@ -47,8 +47,8 @@ module.exports = {
   context: async ({ req, res }) => {
     const loaders = createLoaders();
     let currentUser =
-      req && req.userId
-        ? await getCurrentUser(req.userId, loaders.users)
+      req && req.authorization
+        ? await getCurrentUser(req.authorization.split(' ')[1], loaders.users)
         : null;
 
     return {
@@ -62,8 +62,7 @@ module.exports = {
         Request: request.model,
         Pin: pin.model,
         Comment: comment.model,
-        User: user.model.User,
-        BlacklistedToken: user.model.BlacklistedToken
+        User: user.model
       },
       loaders
     };
