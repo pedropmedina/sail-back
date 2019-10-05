@@ -64,7 +64,7 @@ extend type Mutation {
 }
 
 extend type Subscription {
-  requestCreated(to: String): Request!
+  requestCreated: Request!
   requestUpdated: Request!
   requestDeleted: Request!
 }

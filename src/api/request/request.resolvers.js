@@ -97,6 +97,12 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
   }
 };
 
+const sendDataToCorrenspondingParties = (name, payload, context) => {
+  const { currentUser } = context;
+  const req = payload[name];
+  return req.to === currentUser.email || req.author._id.equals(currentUser._id);
+};
+
 const getRequests = authorize(
   async (_, { reqType }, { models, currentUser }) => {
     try {
@@ -301,18 +307,23 @@ module.exports = {
     requestCreated: {
       subscribe: withFilter(
         () => pubsub.asyncIterator(REQUEST_CREATED),
-        (payload, variables, context, info) => {
-          console.log('this was called!!!!!!');
-          console.log({ payload, variables, context, info });
-          return true;
-        }
+        (payload, _, context) =>
+          sendDataToCorrenspondingParties('requestCreated', payload, context)
       )
     },
     requestUpdated: {
-      subscribe: () => pubsub.asyncIterator(REQUEST_UPDATED)
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(REQUEST_UPDATED),
+        (payload, _, context) =>
+          sendDataToCorrenspondingParties('requestUpdated', payload, context)
+      )
     },
     requestDeleted: {
-      subscribe: () => pubsub.asyncIterator(REQUEST_DELETED)
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(REQUEST_DELETED),
+        (payload, _, context) =>
+          sendDataToCorrenspondingParties('requestDeleted', payload, context)
+      )
     }
   },
   Request: {

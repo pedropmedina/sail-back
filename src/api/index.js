@@ -41,25 +41,26 @@ module.exports = {
   ),
   subscriptions: {
     onConnect: async connectionParams => {
-      // handle authentication for requests made via websocket
-      const loaders = createLoaders();
-      const token = connectionParams.authToken;
-      let currentUser = null;
-      if (token) {
-        currentUser = await getCurrentUser(token, loaders.users);
-      }
-      return { currentUser };
+      // pass token down in the connection.context obj
+      const token = connectionParams.authToken || '';
+      return { token };
     }
   },
-  context: async ({ req, res }) => {
+  context: async ({ req, res, connection }) => {
     const loaders = createLoaders();
-    let currentUser =
-      req && req.headers.authorization
-        ? await getCurrentUser(
-            req.headers.authorization.split(' ')[1],
-            loaders.users
-          )
-        : null;
+    let currentUser = null;
+
+    // handle authentication for requests made via websocket
+    if (connection && connection.context.token) {
+      const token = connection.context.token;
+      currentUser = await getCurrentUser(token, loaders.users);
+    }
+
+    // handle authentication for requests made via http
+    if (req && req.headers.authorization) {
+      const token = req.headers.authorization.split(' ')[1] || '';
+      currentUser = await getCurrentUser(token, loaders.users);
+    }
 
     return {
       req,

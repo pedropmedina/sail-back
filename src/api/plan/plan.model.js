@@ -3,8 +3,8 @@ const Schema = mongoose.Schema;
 
 const Conversation = require('../conversation/conversation.model');
 const Request = require('../request/request.model');
-const { User } = require('../user/user.model');
-const areFriends = require('../../utils/areFriends');
+const User = require('../user/user.model');
+// const areFriends = require('../../utils/areFriends');
 
 const planSchema = new Schema(
   {
@@ -39,34 +39,6 @@ planSchema.pre('save', async function() {
 
   // push author into plan's participants' array
   this.participants.push(this.author);
-
-  for (let inviteeEmail of this.invites) {
-    // check if invitee is friend
-    const invitee = await User.findOne({ email: inviteeEmail }).exec();
-    const isFriend = areFriends(
-      invitee.friends,
-      author.friends,
-      this.author,
-      invitee._id
-    );
-
-    // instantiate new request and persist in db
-    if (isFriend) {
-      const req = await new Request({
-        to: inviteeEmail,
-        reqType: 'INVITE',
-        plan: this._id,
-        author: this.author
-      }).save();
-      // find each user to whom request has been made and push request into receivedRequest array
-      invitee.receivedRequests.push(req._id);
-      await invitee.save();
-
-      // push and save request into author's sentRequests array
-      author.sentRequests.push(req._id);
-      await author.save();
-    }
-  }
 });
 
 const Plan = mongoose.model('Plan', planSchema);

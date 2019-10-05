@@ -15,6 +15,8 @@ const requestSchema = new Schema(
   { timestamps: true }
 );
 
+//TODO: update request author's sentRequests array upon creating new request and update "to" user's received requests array as well
+
 const Request = mongoose.model('Request', requestSchema);
 
 module.exports = Request;

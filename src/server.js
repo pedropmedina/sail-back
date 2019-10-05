@@ -86,6 +86,6 @@ server.installSubscriptionHandlers(httpServer);
 // prettier-ignore
 httpServer.listen({ port: 4000 }, () => {
   console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
-  console.log(`🚀 Subscriptions readt at http://localhost:4000${server.subscriptionsPath}`
+  console.log(`🚀 Subscriptions ready at http://localhost:4000${server.subscriptionsPath}`
   );
 });
