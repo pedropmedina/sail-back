@@ -228,6 +228,13 @@ const deleteRequest = authorize(
         throw new ApolloError('Unauthorized action!');
       }
 
+      // remove invite from plan.invites
+      if (req.reqType === 'INVITE') {
+        await models.Plan.findByIdAndUpdate(req.plan, {
+          $pull: { invites: req.to }
+        }).exec();
+      }
+
       // pull request's id from request's owner sentRequests' array
       await currentUser
         .updateOne({

@@ -145,6 +145,10 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
       })
       .populate('likedpins')
       .populate('friends')
+      .populate({
+        path: 'sentRequests',
+        populate: 'author'
+      })
       .exec();
     return user;
   } catch (error) {
