@@ -10,86 +10,66 @@ const REQUEST_CREATED = 'REQUEST_CREATED';
 const REQUEST_UPDATED = 'REQUEST_UPDATED';
 const REQUEST_DELETED = 'REQUEST_DELETED';
 
-const _hasReceivedReq = (userDoc, currentUserId, reqType, cb) => {
-  return userDoc.receivedRequests.some(req => {
-    const condition =
-      req.author.toString() === currentUserId.toString() &&
-      req.reqType === reqType;
-    return cb && typeof cb === 'function' && condition ? cb(req) : condition;
-  });
-};
-
-const _hasSentReq = (userDoc, toUserId, reqType, cb) => {
-  return userDoc.sentRequests.some(req => {
-    const condition =
-      req.to.toString() === toUserId.toString() && req.reqType === reqType;
+const _hasSentReq = (reqs, to, reqType, cb) => {
+  return reqs.some(req => {
+    const condition = req.to === to && req.reqType === reqType;
     return cb && typeof cb === 'function' && condition ? cb(req) : condition;
   });
 };
 
 const _checkForExistingFriendReq = async (input, currentUser, models) => {
-  const toUser = await models.User.findOne({ email: input.to })
-    .populate('receivedRequests')
-    .exec();
   const fromUser = await models.User.populate(currentUser, 'sentRequests');
+  const toUser = await models.User.findOne({ username: input.to })
+    .populate('sentRequests')
+    .exec();
 
-  const existingReceivedReq = _hasReceivedReq(
-    toUser,
-    currentUser._id,
-    'FRIEND'
-  );
-  const existingSentReq = _hasSentReq(fromUser, toUser._id, 'FRIEND');
+  // check if either user has already sent request
+  const hasReq1 = _hasSentReq(fromUser.sentRequests, toUser.username, 'FRIEND');
+  const hasReq2 = _hasSentReq(toUser.sentRequests, fromUser._id, 'FRIEND');
 
-  const alreadyFriends = areFriends(
-    toUser.friends,
-    fromUser.friends,
-    currentUser._id,
-    toUser._id
-  );
+  // check if they're alredy friends
+  const isFriend1 = areFriends(fromUser.friends, toUser._id);
+  const isFriend2 = areFriends(toUser.friends, fromUser._id);
 
-  if (alreadyFriends) {
+  if (isFriend1 || isFriend2) {
     console.error('Already friends');
     throw new ApolloError('Already existing friends!');
   }
 
-  if (existingReceivedReq || existingSentReq) {
+  if (hasReq1 || hasReq2) {
     console.error('friend request already made!');
     throw new ApolloError('Friend request already has been made!');
   }
 };
 
 const _checkForExistingInviteReq = async (input, currentUser, models) => {
-  const toUser = await models.User.findOne({ email: input.to })
-    .populate('receivedRequests')
-    .exec();
   const fromUser = await models.User.populate(currentUser, 'sentRequests');
+  const toUser = await models.User.findOne({ username: input.to })
+    .populate('sentRequests')
+    .exec();
 
   // make sure the request is only made to friends
-  const isFriend = areFriends(
-    toUser.friends,
-    fromUser.friends,
-    currentUser._id,
-    toUser._id
-  );
+  const isFriend1 = areFriends(fromUser.friends, toUser._id);
+  const isFriend2 = areFriends(toUser.friends, fromUser._id);
 
-  if (!isFriend) {
+  if (!isFriend1 || !isFriend2) {
     throw new ApolloError('Must be a friend first to sent invite!');
   }
 
-  const existingReceivedReq = _hasReceivedReq(
-    toUser,
-    currentUser._id,
+  const hasReq1 = _hasSentReq(
+    fromUser.sentRequests,
+    toUser.username,
     'INVITE',
-    req => req.plan.toString() === input.plan.toString()
+    req => req.plan.equals(input.plan)
   );
-  const existingSentReq = _hasSentReq(
-    fromUser,
-    toUser._id,
+  const hasReq2 = _hasSentReq(
+    toUser.sentRequests,
+    fromUser.username,
     'INVITE',
-    req => req.plan.toString() === input.plan.toString()
+    req => req.plan.equals(input.plan)
   );
 
-  if (existingReceivedReq || existingSentReq) {
+  if (hasReq1 || hasReq2) {
     console.error('Invite request already made!');
     throw new ApolloError(
       'Invite request already exist for selected user and plan!'
@@ -100,27 +80,29 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
 const sendDataToCorrenspondingParties = (name, payload, context) => {
   const { currentUser } = context;
   const req = payload[name];
-  return req.to === currentUser.email || req.author._id.equals(currentUser._id);
+  return (
+    req.to === currentUser.username || req.author._id.equals(currentUser._id)
+  );
 };
 
 const getRequests = authorize(
   async (_, { reqType }, { models, currentUser }) => {
     try {
-      const { _id, email } = currentUser;
+      const { _id, username } = currentUser;
       let requests;
 
       switch (reqType) {
         case 'FRIEND':
         case 'INVITE':
           requests = await models.Request.find({
-            $and: [{ reqType }, { $or: [{ author: _id }, { to: email }] }]
+            $and: [{ reqType }, { $or: [{ author: _id }, { to: username }] }]
           })
             .populate('author')
             .exec();
           break;
         default:
           requests = await models.Request.find({
-            $or: [{ author: _id }, { to: email }]
+            $or: [{ author: _id }, { to: username }]
           })
             .populate('author')
             .exec();
@@ -167,14 +149,7 @@ const createRequest = authorize(
       // push req in author's sentRequests array
       currentUser.sentRequests.push(req._id);
       await currentUser.save();
-      // find users to whom req has been sent and
-      // push request into their receivedRequest's array
-      await models.User.findOneAndUpdate(
-        { email: req.to },
-        {
-          $push: { receivedRequests: req._id }
-        }
-      );
+
       // return req with populated author
       const populatePaths = [{ path: 'author' }];
       const requestCreated = await models.Request.populate(req, populatePaths);
@@ -199,39 +174,19 @@ const updateRequest = authorize(
       let req = await models.Request.findById(reqId)
         .populate('author')
         .exec();
-      // if currentUser == req.to
-      // 1 - update req.status
-      // and reqType === FRIEND
-      // and if req's status == ACCEPTED
-      // 1 - push req.author into currentUser's friends and remove reqId from receivedRequests
-      // 2 - push req.to into req.author's friends
-      // and if req's status == DENIED
-      // 1 - remove reqId from currentUser's receivedRequests
 
-      // if currentUser == req.to
-      // and reqType === INVITE
-      // and if req's status === ACCEPTED
-      // 1 - push currentUser._id into plan.participants
-      // 2 - remove req from currentUser.receivedRequests
-      // and if req's status === DENIED
-      // 1 - remove req from currentUser.receivedRequests
-
-      if (currentUser.email === req.to) {
+      // update users and plan documents given the request type
+      if (currentUser.username === req.to) {
         req.status = status;
         if (req.reqType === 'FRIEND') {
           if (req.status === 'ACCEPTED') {
             await currentUser
               .updateOne({
-                $push: { friends: req.author._id },
-                $pull: { receivedRequests: reqId }
+                $push: { friends: req.author._id }
               })
               .exec();
             await models.User.findByIdAndUpdate(req.author._id, {
               $push: { friends: currentUser._id }
-            });
-          } else if (req.status === 'DENIED') {
-            await currentUser.updateOne({
-              $pull: { receivedRequests: reqId }
             });
           }
         } else if (req.reqType === 'INVITE') {
@@ -241,13 +196,8 @@ const updateRequest = authorize(
             }).exec();
             await currentUser
               .updateOne({
-                $pull: { receivedRequests: reqId },
                 $push: { inPlans: req.plan }
               })
-              .exec();
-          } else if (req.status === 'DENIED') {
-            await currentUser
-              .updateOne({ $pull: { receivedRequests: reqId } })
               .exec();
           }
         }
@@ -266,7 +216,7 @@ const updateRequest = authorize(
 const deleteRequest = authorize(
   async (_, { reqId }, { models, currentUser }) => {
     try {
-      // delete the request if currenUser is author and status is not PENDING
+      // delete the request if currenUser is author
       const req = await models.Request.findOneAndDelete({
         _id: reqId,
         author: currentUser._id
@@ -340,7 +290,7 @@ module.exports = {
   },
   FriendRequest: {
     to: async (root, _, { models }) => {
-      return await models.User.findOne({ email: root.to }).exec();
+      return await models.User.findOne({ username: root.to }).exec();
     }
   },
   InviteRequest: {
@@ -350,7 +300,7 @@ module.exports = {
       }
     },
     to: async (root, _, { models }) => {
-      return await models.User.findOne({ email: root.to }).exec();
+      return await models.User.findOne({ username: root.to }).exec();
     }
   }
 };

@@ -40,7 +40,6 @@ const userSchema = new Schema(
     likedPins: [{ type: Schema.Types.ObjectId, ref: 'Pin' }],
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     sentRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
-    receivedRequests: [{ type: Schema.Types.ObjectId, ref: 'Request' }],
     admin: { type: Boolean, default: false },
     tokenVersion: { type: Number, default: 0 }
   },

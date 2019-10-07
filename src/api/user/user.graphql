@@ -11,7 +11,6 @@ type User {
   myPins: [Pin]!
   likedPins: [Pin]!
   sentRequests: [Request]!
-  receivedRequests: [Request]!
   admin: Boolean!
   tokenVersion: Int!
 }
