@@ -303,7 +303,8 @@ module.exports = {
   InviteRequest: {
     plan: async ({ plan, reqType }, _, { models }) => {
       if (reqType === 'INVITE') {
-        return await models.Plan.findById(plan).exec();
+        const p = await models.Plan.findById(plan).exec();
+        return p;
       }
     },
     to: async (root, _, { models }) => {

@@ -101,8 +101,7 @@ const me = authorize(async (_, __, { models, currentUser }) => {
     { path: 'myPins', populate: { path: 'comments' } },
     { path: 'likedPins' },
     { path: 'friends' },
-    { path: 'sentRequests', populate: { path: 'author' } },
-    { path: 'receivedRequests', populate: { path: 'author' } }
+    { path: 'sentRequests', populate: [{ path: 'author' }, { path: 'plan' }] }
   ];
   return await models.User.populate(currentUser, opts);
 });

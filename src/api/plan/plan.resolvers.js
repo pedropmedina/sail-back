@@ -3,9 +3,9 @@ const authorize = require('../../utils/authorize');
 
 const getPlan = authorize(async (_, { planId }, { models }) => {
   try {
-    const plan = await models.Plan.finById(planId)
+    const plan = await models.Plan.findById(planId)
       .populate({ path: 'location', populate: { path: 'comments' } })
-      .populate('chat')
+      .populate({ path: 'chat', populate: 'author' })
       .populate('participants')
       .populate('author')
       .exec();
@@ -22,7 +22,7 @@ const getPlans = authorize(async (_, __, { models, currentUser }) => {
       participants: { $in: [currentUser._id] }
     })
       .populate({ path: 'location', populate: { path: 'comments' } })
-      .populate('chat')
+      .populate({ path: 'chat', populate: { path: 'author' } })
       .populate('participants')
       .populate('author')
       .exec();
@@ -34,18 +34,27 @@ const getPlans = authorize(async (_, __, { models, currentUser }) => {
 
 const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
   try {
-    let plan = new models.Plan({
-      ...input,
+    // create corresponding chat
+    const chat = await new models.Conversation({
       author: currentUser._id
-    });
-    await plan.save();
+    })
+      .keyMessagesByUser(currentUser.username)
+      .save();
+
+    // create new plan with chat's id
+    const plan = await new models.Plan({
+      ...input,
+      chat: chat._id,
+      author: currentUser._id
+    }).save();
+
     const opts = [
       { path: 'location', populate: 'comments' },
       { path: 'participants' },
+      { path: 'chat', populate: 'author' },
       { path: 'author' }
     ];
-    plan = await models.Plan.populate(plan, opts);
-    return plan;
+    return await models.Plan.populate(plan, opts);
   } catch (error) {
     console.error('Error while creating plan', error);
     throw error;
@@ -99,7 +108,7 @@ module.exports = {
   },
   Plan: {
     invites: (root, _, { models }) => {
-      return models.User.find({ email: { $in: root.invites } }).exec();
+      return models.User.find({ username: { $in: root.invites } }).exec();
     }
   }
 };

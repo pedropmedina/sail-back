@@ -6,7 +6,7 @@ type Plan {
   date: String!
   invites: [User]!
   participants: [User]!
-  chat: Conversation
+  chat: Conversation!
   media: [String]!
   private: Boolean!
   author: User!

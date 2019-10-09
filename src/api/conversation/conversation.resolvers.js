@@ -47,9 +47,7 @@ const createConversation = authorize(
 const deleteConversation = grantAdminAccess(
   async (_, { conversationId }, { models }) => {
     try {
-      const conversation = await models.Conversation.findById(
-        conversationId
-      ).exec();
+      const conversation = await models.Conversation.findById(conversationId);
       await conversation.remove();
       return true;
     } catch (error) {
@@ -66,7 +64,7 @@ module.exports = {
   },
   Mutation: {
     createConversation,
-    deleteConversation,
+    deleteConversation
   },
   Conversation: {
     participants: async (root, _, { models }) => {
