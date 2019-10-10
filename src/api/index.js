@@ -39,28 +39,20 @@ module.exports = {
     user.resolvers,
     search.resolvers
   ),
-  subscriptions: {
-    onConnect: async connectionParams => {
-      // pass token down in the connection.context obj
-      const token = connectionParams.authToken || '';
-      return { token };
-    }
-  },
-  context: async ({ req, res, connection }) => {
+  context: async ({ req, res, payload }) => {
     const loaders = createLoaders();
     let currentUser = null;
 
-    // handle authentication for requests made via websocket
-    if (connection && connection.context.token) {
-      const token = connection.context.token;
-      currentUser = await getCurrentUser(token, loaders.users);
-    }
+    // handle authentication for requests made via both http and ws
+    const wsToken = payload ? payload.authToken : '';
+    const reqToken = req ? req.headers.authorization.split(' ')[1] : '';
+    currentUser = wsToken
+      ? await getCurrentUser(wsToken, loaders.users)
+      : reqToken
+      ? await getCurrentUser(reqToken, loaders.users)
+      : null;
 
-    // handle authentication for requests made via http
-    if (req && req.headers.authorization) {
-      const token = req.headers.authorization.split(' ')[1] || '';
-      currentUser = await getCurrentUser(token, loaders.users);
-    }
+    console.log({ wsToken, reqToken });
 
     return {
       req,
