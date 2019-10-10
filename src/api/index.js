@@ -45,7 +45,10 @@ module.exports = {
 
     // handle authentication for requests made via both http and ws
     const wsToken = payload ? payload.authToken : '';
-    const reqToken = req ? req.headers.authorization.split(' ')[1] : '';
+    const reqToken =
+      req && req.headers.authorization
+        ? req.headers.authorization.split(' ')[1]
+        : '';
     currentUser = wsToken
       ? await getCurrentUser(wsToken, loaders.users)
       : reqToken
