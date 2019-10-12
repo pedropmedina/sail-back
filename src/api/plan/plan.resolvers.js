@@ -5,8 +5,10 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
   try {
     const plan = await models.Plan.findById(planId)
       .populate({ path: 'location', populate: { path: 'comments' } })
-      .populate({ path: 'chat', populate: 'author' })
-      .populate('participants')
+      .populate({
+        path: 'chat',
+        populate: [{ path: 'author' }, { path: 'messages', populate: 'author' }]
+      })
       .populate('author')
       .exec();
     return plan;
@@ -19,11 +21,13 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
 const getPlans = authorize(async (_, __, { models, currentUser }) => {
   try {
     const plans = await models.Plan.find({
-      participants: { $in: [currentUser._id] }
+      participants: { $in: [currentUser.username] }
     })
       .populate({ path: 'location', populate: { path: 'comments' } })
-      .populate({ path: 'chat', populate: { path: 'author' } })
-      .populate('participants')
+      .populate({
+        path: 'chat',
+        populate: [{ path: 'author' }, { path: 'messages', populate: 'author' }]
+      })
       .populate('author')
       .exec();
     return plans;
@@ -36,10 +40,9 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
   try {
     // create corresponding chat
     const chat = await new models.Conversation({
-      author: currentUser._id
-    })
-      .keyMessagesByUser(currentUser.username)
-      .save();
+      author: currentUser._id,
+      participants: [currentUser.username]
+    }).save();
 
     // create new plan with chat's id
     const plan = await new models.Plan({
@@ -50,7 +53,6 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
 
     const opts = [
       { path: 'location', populate: 'comments' },
-      { path: 'participants' },
       { path: 'chat', populate: 'author' },
       { path: 'author' }
     ];
@@ -67,7 +69,6 @@ const updatePlan = authorize(async (_, { input }, { models }) => {
     const plan = await models.Plan.findByIdAndUpdate(_id, update, { new: true })
       .populate({ path: 'location', populate: 'comments' })
       .populate('chat')
-      .populate('participants')
       .populate('author')
       .exec();
     return plan;
@@ -109,6 +110,9 @@ module.exports = {
   Plan: {
     invites: (root, _, { models }) => {
       return models.User.find({ username: { $in: root.invites } }).exec();
+    },
+    participants: (root, _, { models }) => {
+      return models.User.find({ username: { $in: root.participants } }).exec();
     }
   }
 };

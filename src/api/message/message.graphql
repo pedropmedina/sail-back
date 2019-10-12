@@ -3,16 +3,12 @@ type Message {
   conversation: Conversation!
   content: String!
   author: User!
+  createdAt: String!
 }
 
 input CreateMessageInput {
   conversation: ID!
   content: String!
-}
-
-input RemoveMessageInput {
-  conversationId: ID!
-  messageId: ID!
 }
 
 extend type Query {
@@ -23,14 +19,9 @@ extend type Query {
 extend type Mutation {
   createMessage(input: CreateMessageInput!): Message!
   deleteMessage(messageId: ID!): Boolean!
-  removeMessages(conversationId: ID!): Boolean!
-  removeMessage(input: RemoveMessageInput!): Boolean!
 }
 
 extend type Subscription {
-  messageCreated: Conversation!
-  messageUpdated: Conversation!
-  messageDeleted: Conversation!
-  messagesRemoved: Conversation!
-  messageRemoved: Conversation!
+  messageCreated(conversationId: ID!): Message!
+  messageDeleted(conversationId: ID!): Message!
 }

@@ -34,11 +34,11 @@ const getComment = grantOwnerAcces(async (_, { commentId }, { models }) => {
 });
 
 const createComment = grantOwnerAcces(
-  async (_, { input: { text, pinId } }, { models, currentUser }) => {
+  async (_, { input: { content, pinId } }, { models, currentUser }) => {
     try {
       // create comment
       const comment = await new models.Comment({
-        text,
+        content,
         pin: pinId,
         author: currentUser._id
       }).save();

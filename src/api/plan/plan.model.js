@@ -13,7 +13,7 @@ const planSchema = new Schema(
     location: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
     date: { type: Schema.Types.Date, required: true },
     invites: [{ type: String, required: true }],
-    participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    participants: [{ type: String, required: true }],
     chat: { type: Schema.Types.ObjectId, ref: 'Conversation' },
     media: [String],
     private: { type: Boolean, default: false },
@@ -24,8 +24,10 @@ const planSchema = new Schema(
 
 planSchema.index({ title: 'text', description: 'text' });
 
+// clean up following the deletion of plan
 planSchema.pre('remove', async function() {
-  await Conversation.findOneAndDelete({ plan: this._id }).exec();
+  const conversation = await Conversation.findOne({ plan: this._id }).exec();
+  await conversation.remove();
   return await Request.deleteMany({ plan: this._id }).exec();
 });
 
@@ -37,7 +39,7 @@ planSchema.pre('save', async function() {
   author.inPlans.push(this._id);
   await author.save();
 
-  this.participants.push(this.author);
+  this.participants.push(author.username);
 });
 
 const Plan = mongoose.model('Plan', planSchema);

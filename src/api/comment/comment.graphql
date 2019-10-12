@@ -1,20 +1,20 @@
 type Comment {
   _id: ID!
-  text: String!
+  content: String!
   pin: Pin!
   author: User!
   createdAt: String!
 }
 
 input CreateCommentInput {
-  text: String!
+  content: String!
   pinId: ID!
 }
 
 input UpdateCommentInput {
   commentId: ID!
   pinId: ID!
-  text: String!
+  content: String!
 }
 
 input DeleteCommentInput {

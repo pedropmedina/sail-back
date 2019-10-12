@@ -191,9 +191,13 @@ const updateRequest = authorize(
           }
         } else if (req.reqType === 'INVITE') {
           if (req.status === 'ACCEPTED') {
-            await models.Plan.findByIdAndUpdate(req.plan, {
-              $push: { participants: currentUser._id }
+            const plan = await models.Plan.findByIdAndUpdate(req.plan, {
+              $push: { participants: currentUser.username },
+              $pull: { invites: currentUser.username }
             }).exec();
+            await models.Conversation.findByIdAndUpdate(plan.chat, {
+              $push: { participants: currentUser.username }
+            });
             await currentUser
               .updateOne({
                 $push: { inPlans: req.plan }

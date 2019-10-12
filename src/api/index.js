@@ -55,8 +55,6 @@ module.exports = {
       ? await getCurrentUser(reqToken, loaders.users)
       : null;
 
-    console.log({ wsToken, reqToken });
-
     return {
       req,
       res,

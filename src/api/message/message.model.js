@@ -14,17 +14,17 @@ const messageSchema = new Schema(
   { timestamps: true }
 );
 
-// add message to corresponding conversation
-// markModified path is required to persist changes made to mixed types in mongoose
-messageSchema.methods.addMessageToConversation = async function(Conversation) {
-  const conversation = await Conversation.findById(this.conversation).exec();
-  conversation.messages.push(this._id);
-  for (let username of conversation.participants) {
-    conversation.keyedMessagesByUser[username].push(this._id);
-    conversation.markModified(`keyedMessagesByUser.${username}`);
-  }
-  return await conversation.save();
-};
+// // add message to corresponding conversation
+// // markModified path is required to persist changes made to mixed types in mongoose
+// messageSchema.methods.addMessageToConversation = async function(Conversation) {
+//   const conversation = await Conversation.findById(this.conversation).exec();
+//   conversation.messages.push(this._id);
+//   for (let username of conversation.participants) {
+//     conversation.keyedMessagesByUser[username].push(this._id);
+//     conversation.markModified(`keyedMessagesByUser.${username}`);
+//   }
+//   return await conversation.save();
+// };
 
 const Message = mongoose.model('Message', messageSchema);
 
