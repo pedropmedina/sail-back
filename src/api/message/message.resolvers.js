@@ -1,4 +1,4 @@
-const { PubSub, withFilter } = require('apollo-server');
+const { PubSub, withFilter, ApolloError } = require('apollo-server');
 const authorize = require('../../utils/authorize');
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 
@@ -36,16 +36,27 @@ const getMessage = authorize(async (_, { messageId }, { models }) => {
 const createMessage = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
+      // find conversation and check if currentUser is a participant to allow write access
+      const conversation = await models.Conversation.findById(
+        input.conversation
+      ).exec();
+
+      const isParticipant = conversation.participants.some(
+        username => username === currentUser.username
+      );
+      if (!isParticipant) {
+        throw new ApolloError('Must be a participant!');
+      }
+
       let message = new models.Message({
         ...input,
         author: currentUser._id
       });
       await message.save();
 
-      // push new message in to its corresponding array
-      await models.Conversation.findByIdAndUpdate(input.conversation, {
-        $push: { messages: message._id }
-      }).exec();
+      // push message into conversation
+      conversation.messages.push(message._id);
+      await conversation.save();
 
       // populate all fields for message
       message = await models.Message.populate(message, [
@@ -84,49 +95,6 @@ const deleteMessage = grantAdminAccess(async (_, { messageId }, { models }) => {
   }
 });
 
-// const removeMessages = authorize(
-//   async (_, { conversationId }, { models, currentUser: { username } }) => {
-//     let conversation = await models.Conversation.findById(
-//       conversationId
-//     ).exec();
-//     conversation.keyedMessagesByUser[username] = [];
-//     conversation.markModified(`keyedMessagesByUser.${username}`);
-//     await conversation.save();
-//     conversation = await models.Conversation.populate(conversation, [
-//       { path: 'messages' },
-//       { path: 'author' }
-//     ]);
-//     // publish the updated conversation with messages removed for current user
-//     pubSub.publish(MESSAGES_REMOVED, { messagesRemoved: conversation });
-//     return true;
-//   }
-// );
-
-// const removeMessage = authorize(
-//   async (
-//     _,
-//     { input: { conversationId, messageId } },
-//     { models, currentUser: { username } }
-//   ) => {
-//     let conversation = await models.Conversation.findById(
-//       conversationId
-//     ).exec();
-//     const messages = conversation.keyedMessagesByUser[username];
-//     conversation.keyedMessagesByUser[username] = messages.filter(
-//       msgId => !msgId.equals(messageId)
-//     );
-//     conversation.markModified(`keyedMessagesByUser.${username}`);
-//     await conversation.save();
-//     conversation = await models.Conversation.populate(conversation, [
-//       { path: 'messages' },
-//       { path: 'author' }
-//     ]);
-//     // publish updated  conversation with removed message for current user
-//     pubSub.publish(MESSAGE_REMOVED, { messageRemoved: conversation });
-//     return true;
-//   }
-// );
-
 module.exports = {
   Query: {
     getMessages,
@@ -140,9 +108,12 @@ module.exports = {
     messageCreated: {
       subscribe: withFilter(
         () => pubSub.asyncIterator(MESSAGE_CREATED),
-        (payload, { conversationId }) => {
+        (payload, { conversationId }, { currentUser }) => {
           const { conversation } = payload.messageCreated;
-          return conversation._id.equals(conversationId);
+          const isParticipant = conversation.participants.some(
+            username => username === currentUser.username
+          );
+          return conversation._id.equals(conversationId) && isParticipant;
         }
       )
     },

@@ -113,7 +113,7 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
       .populate('myPlans')
       .populate({
         path: 'inPlans',
-        populate: [{ path: 'participants' }, { path: 'location' }]
+        populate: [{ path: 'location' }]
       })
       .populate({
         path: 'myPins',
@@ -136,7 +136,7 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
       .populate('myPlans')
       .populate({
         path: 'inPlans',
-        populate: [{ path: 'participants' }, { path: 'location' }]
+        populate: [{ path: 'location' }]
       })
       .populate({
         path: 'myPins',
