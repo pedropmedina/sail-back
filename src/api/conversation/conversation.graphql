@@ -5,6 +5,7 @@ type Conversation {
   participants: [User!]!
   messages: [Message]!
   author: User!
+  createdAt: String!
 }
 
 input CreateConversationInput {

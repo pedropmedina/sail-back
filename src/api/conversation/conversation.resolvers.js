@@ -1,9 +1,11 @@
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 const authorize = require('../../utils/authorize');
 
-const getConversations = authorize(async (_, __, { models }) => {
+const getConversations = authorize(async (_, __, { models, currentUser }) => {
   try {
-    const conversations = await models.Conversation.find({})
+    const conversations = await models.Conversation.find({
+      participants: { $in: [currentUser.username] }
+    })
       .populate({ path: 'messages', populate: [{ path: 'author' }] })
       .populate('author')
       .exec();
