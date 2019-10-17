@@ -1,5 +1,4 @@
 const merge = require('lodash/merge');
-const { GraphQLJSONObject } = require('graphql-type-json');
 
 // api
 const plan = require('./plan');
@@ -29,7 +28,6 @@ module.exports = {
     search.typeDefs
   ].join(' '),
   resolvers: merge(
-    { JSONObject: GraphQLJSONObject },
     plan.resolvers,
     conversation.resolvers,
     message.resolvers,
