@@ -113,7 +113,9 @@ module.exports = {
           const isParticipant = conversation.participants.some(
             username => username === currentUser.username
           );
-          return conversation._id.equals(conversationId) && isParticipant;
+          return conversationId
+            ? conversation._id.equals(conversationId) && isParticipant
+            : isParticipant;
         }
       )
     },

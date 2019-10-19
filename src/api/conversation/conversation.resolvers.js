@@ -20,7 +20,7 @@ const getConversations = authorize(async (_, __, { models, currentUser }) => {
 const getConversation = authorize(async (_, { conversationId }, { models }) => {
   try {
     const conversation = await models.Conversation.findById(conversationId)
-      .populate('messages')
+      .populate({ path: 'messages', populate: [{ path: 'author' }] })
       .populate('author')
       .exec();
     return conversation;

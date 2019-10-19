@@ -22,6 +22,6 @@ extend type Mutation {
 }
 
 extend type Subscription {
-  messageCreated(conversationId: ID!): Message!
+  messageCreated(conversationId: ID): Message!
   messageDeleted(conversationId: ID!): Message!
 }
