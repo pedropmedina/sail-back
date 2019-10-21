@@ -49,15 +49,28 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
       author: currentUser._id,
       participants: [currentUser.username],
       plan: plan._id
+    });
+
+    // create welcome message
+    const message = await new models.Message({
+      conversation: chat._id,
+      content: "Let's get together!",
+      author: currentUser._id
     }).save();
 
+    // update conversation with new welcome message
+    chat.messages = [message._id];
+    await chat.save();
     // update plan with created chat
     plan.chat = chat._id;
     await plan.save();
 
     const opts = [
       { path: 'location', populate: 'comments' },
-      { path: 'chat', populate: 'author' },
+      {
+        path: 'chat',
+        populate: [{ path: 'author' }, { path: 'messages', populate: 'author' }]
+      },
       { path: 'author' }
     ];
     return await models.Plan.populate(plan, opts);
