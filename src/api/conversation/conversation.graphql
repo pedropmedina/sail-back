@@ -5,11 +5,13 @@ type Conversation {
   participants: [User!]!
   messages: [Message]!
   author: User!
+  plan: ID!
   createdAt: String!
 }
 
 input CreateConversationInput {
   participants: [String!]!
+  message: String
 }
 
 extend type Query {
@@ -20,4 +22,8 @@ extend type Query {
 extend type Mutation {
   createConversation(input: CreateConversationInput!): Conversation!
   deleteConversation(conversationId: ID!): Boolean!
+}
+
+extend type Subscription {
+  conversationCreated: Conversation!
 }

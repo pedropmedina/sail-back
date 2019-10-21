@@ -38,18 +38,22 @@ const getPlans = authorize(async (_, __, { models, currentUser }) => {
 
 const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
   try {
+    // create new plan with chat's id
+    const plan = new models.Plan({
+      ...input,
+      author: currentUser._id
+    });
+
     // create corresponding chat
     const chat = await new models.Conversation({
       author: currentUser._id,
-      participants: [currentUser.username]
+      participants: [currentUser.username],
+      plan: plan._id
     }).save();
 
-    // create new plan with chat's id
-    const plan = await new models.Plan({
-      ...input,
-      chat: chat._id,
-      author: currentUser._id
-    }).save();
+    // update plan with created chat
+    plan.chat = chat._id;
+    await plan.save();
 
     const opts = [
       { path: 'location', populate: 'comments' },
