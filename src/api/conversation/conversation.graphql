@@ -5,8 +5,14 @@ type Conversation {
   participants: [User!]!
   messages: [Message]!
   author: User!
-  plan: ID!
+  plan: ID
   createdAt: String!
+  unreadCount: [UnreadCount]
+}
+
+type UnreadCount {
+  username: String!
+  count: Int
 }
 
 input CreateConversationInput {
