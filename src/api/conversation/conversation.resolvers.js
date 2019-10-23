@@ -73,6 +73,39 @@ const createConversation = authorize(
   }
 );
 
+const updateConversationUnreadCount = authorize(
+  async (_, { input }, { models }) => {
+    const { conversationId, unreadCountId, operation } = input;
+    // find the conversation to be updated
+    const conversation = await models.Conversation.findById(
+      conversationId
+    ).exec();
+    // find the unreadCount subdocument by its id
+    const unreadCount = conversation.unreadCount.id(unreadCountId);
+    // update the unreadCount subdocument count based on the operation
+    switch (operation) {
+      case 'INCREMENT':
+        unreadCount.count++;
+        break;
+      case 'DECREMENT':
+        unreadCount.count--;
+        break;
+      case 'RESET':
+        unreadCount.count = 0;
+        break;
+      default:
+        break;
+    }
+
+    await conversation.save();
+    const opts = [
+      { path: 'messages', populate: 'author' },
+      { path: 'author', populate: 'pins' }
+    ];
+    return await models.Conversation.populate(conversation, opts);
+  }
+);
+
 const deleteConversation = grantAdminAccess(
   async (_, { conversationId }, { models }) => {
     try {
@@ -93,7 +126,8 @@ module.exports = {
   },
   Mutation: {
     createConversation,
-    deleteConversation
+    deleteConversation,
+    updateConversationUnreadCount
   },
   Subscription: {
     conversationCreated: {

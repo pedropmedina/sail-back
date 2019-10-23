@@ -56,6 +56,11 @@ const createMessage = authorize(
 
       // push message into conversation
       conversation.messages.push(message._id);
+      // increment unreadCount in conversation for each user, but the author of message
+      conversation.unreadCount.forEach(
+        each => each.username !== currentUser.username && each.count++
+      );
+
       await conversation.save();
 
       // populate all fields for message

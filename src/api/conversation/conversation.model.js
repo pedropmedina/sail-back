@@ -25,12 +25,14 @@ conversationSchema.pre('remove', async function() {
 });
 
 conversationSchema.pre('save', async function(next) {
-  // iterate over participants and prepare unreadCount
-  const unreadCount = this.participants.reduce((unreadCount, participant) => {
-    unreadCount.push({ username: participant });
-    return unreadCount;
-  }, []);
-  this.unreadCount = unreadCount;
+  // iterate over participants and prepare unreadCount when conversation is first created
+  if (this.isNew) {
+    const unreadCount = this.participants.reduce((unreadCount, participant) => {
+      unreadCount.push({ username: participant });
+      return unreadCount;
+    }, []);
+    this.unreadCount = unreadCount;
+  }
   next();
 });
 

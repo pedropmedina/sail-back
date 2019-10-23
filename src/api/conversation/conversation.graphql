@@ -11,13 +11,26 @@ type Conversation {
 }
 
 type UnreadCount {
+  _id: ID!
   username: String!
   count: Int
+}
+
+enum UnreadCountOperations {
+  INCREMENT
+  DECREMENT
+  RESET
 }
 
 input CreateConversationInput {
   participants: [String!]!
   message: String
+}
+
+input UpdateConversationUnreadCountInput {
+  conversationId: ID!
+  unreadCountId: ID!
+  operation: UnreadCountOperations!
 }
 
 extend type Query {
@@ -28,6 +41,9 @@ extend type Query {
 extend type Mutation {
   createConversation(input: CreateConversationInput!): Conversation!
   deleteConversation(conversationId: ID!): Boolean!
+  updateConversationUnreadCount(
+    input: UpdateConversationUnreadCountInput!
+  ): Conversation!
 }
 
 extend type Subscription {
