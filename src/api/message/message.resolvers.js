@@ -37,7 +37,7 @@ const createMessage = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
       // find conversation and check if currentUser is a participant to allow write access
-      const conversation = await models.Conversation.findById(
+      let conversation = await models.Conversation.findById(
         input.conversation
       ).exec();
 
@@ -61,21 +61,26 @@ const createMessage = authorize(
         each => each.username !== currentUser.username && each.count++
       );
 
-      await conversation.save();
+      conversation = await conversation.save();
 
-      // populate all fields for message
-      message = await models.Message.populate(message, [
-        {
-          path: 'conversation',
-          populate: [{ path: 'messages' }, { path: 'author' }]
-        },
-        { path: 'author' }
-      ]);
+      // populate conversation's fields
+      const opts = [
+        { path: 'messages', populate: 'author' },
+        { path: 'author', populate: 'pins' }
+      ];
+      conversation = await models.Conversation.populate(conversation, opts);
 
       // publish message
-      pubSub.publish(MESSAGE_CREATED, { messageCreated: message });
+      pubSub.publish(MESSAGE_CREATED, { messageCreated: conversation });
 
-      return message;
+      const messageOpts = [
+        {
+          path: 'conversation',
+          populate: [{ path: 'author' }]
+        },
+        { path: 'author' }
+      ];
+      return await models.Message.populate(message, messageOpts);
     } catch (error) {
       console.error('Error while creating message', error);
       throw error;
@@ -114,7 +119,7 @@ module.exports = {
       subscribe: withFilter(
         () => pubSub.asyncIterator(MESSAGE_CREATED),
         (payload, { conversationId }, { currentUser }) => {
-          const { conversation } = payload.messageCreated;
+          const conversation = payload.messageCreated;
           const isParticipant = conversation.participants.some(
             username => username === currentUser.username
           );
