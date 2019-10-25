@@ -5,7 +5,7 @@ type Conversation {
   participants: [User!]!
   messages: [Message]!
   author: User!
-  plan: ID
+  plan: Plan
   createdAt: String!
   unreadCount: [UnreadCount]
 }

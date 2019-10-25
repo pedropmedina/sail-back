@@ -13,6 +13,7 @@ const getConversations = authorize(async (_, __, { models, currentUser }) => {
     })
       .populate({ path: 'messages', populate: [{ path: 'author' }] })
       .populate('author')
+      .populate('plan')
       .exec();
 
     return conversations;
@@ -27,6 +28,7 @@ const getConversation = authorize(async (_, { conversationId }, { models }) => {
     const conversation = await models.Conversation.findById(conversationId)
       .populate({ path: 'messages', populate: [{ path: 'author' }] })
       .populate('author')
+      .populate('plan')
       .exec();
     return conversation;
   } catch (error) {
@@ -59,7 +61,8 @@ const createConversation = authorize(
       conversation = await conversation.save();
       const opts = [
         { path: 'messages', populate: 'author' },
-        { path: 'author', populate: 'pins' }
+        { path: 'author', populate: 'pins' },
+        { path: 'plan' }
       ];
       conversation = await models.Conversation.populate(conversation, opts);
       // publish new conversation
