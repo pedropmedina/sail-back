@@ -103,7 +103,8 @@ const updateConversationUnreadCount = authorize(
     await conversation.save();
     const opts = [
       { path: 'messages', populate: 'author' },
-      { path: 'author', populate: 'pins' }
+      { path: 'author', populate: 'pins' },
+      { path: 'plan'}
     ];
     return await models.Conversation.populate(conversation, opts);
   }

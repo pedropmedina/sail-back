@@ -196,7 +196,10 @@ const updateRequest = authorize(
               $pull: { invites: currentUser.username }
             }).exec();
             await models.Conversation.findByIdAndUpdate(plan.chat, {
-              $push: { participants: currentUser.username }
+              $push: {
+                participants: currentUser.username,
+                unreadCount: { username: currentUser.username }
+              }
             });
             await currentUser
               .updateOne({

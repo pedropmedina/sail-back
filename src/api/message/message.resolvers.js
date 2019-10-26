@@ -66,7 +66,8 @@ const createMessage = authorize(
       // populate conversation's fields
       const opts = [
         { path: 'messages', populate: 'author' },
-        { path: 'author', populate: 'pins' }
+        { path: 'author', populate: 'pins' },
+        { path: 'plan' }
       ];
       conversation = await models.Conversation.populate(conversation, opts);
 
