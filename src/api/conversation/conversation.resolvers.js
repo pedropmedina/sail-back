@@ -76,6 +76,19 @@ const createConversation = authorize(
   }
 );
 
+const deleteConversation = grantAdminAccess(
+  async (_, { conversationId }, { models }) => {
+    try {
+      const conversation = await models.Conversation.findById(conversationId);
+      await conversation.remove();
+      return true;
+    } catch (error) {
+      console.error('Error while deleting conversation', error);
+      throw error;
+    }
+  }
+);
+
 const updateConversationUnreadCount = authorize(
   async (_, { input }, { models }) => {
     const { conversationId, unreadCountId, operation } = input;
@@ -104,24 +117,29 @@ const updateConversationUnreadCount = authorize(
     const opts = [
       { path: 'messages', populate: 'author' },
       { path: 'author', populate: 'pins' },
-      { path: 'plan'}
+      { path: 'plan' }
     ];
+
     return await models.Conversation.populate(conversation, opts);
   }
 );
 
-const deleteConversation = grantAdminAccess(
-  async (_, { conversationId }, { models }) => {
-    try {
-      const conversation = await models.Conversation.findById(conversationId);
-      await conversation.remove();
-      return true;
-    } catch (error) {
-      console.error('Error while deleting conversation', error);
-      throw error;
-    }
-  }
-);
+// const getTotalUnreadCount = authorize(
+//   async (_, __, { models, currentUser }) => {
+//     const arr = await models.Conversation.aggregate([
+//       { $match: { participants: { $in: [currentUser.username] } } },
+//       { $unwind: '$unreadCount' },
+//       {
+//         $group: {
+//           _id: '$unreadCount.username',
+//           totalCount: { $sum: '$unreadCount.count' }
+//         }
+//       },
+//       { $match: { _id: currentUser.username}}
+//     ]).exec();
+//     return arr[0]
+//   }
+// );
 
 module.exports = {
   Query: {
@@ -143,6 +161,8 @@ module.exports = {
       return await models.User.find({
         username: { $in: root.participants }
       }).exec();
-    }
+    },
+    unreadCount: (root, __, { currentUser }) =>
+      root.unreadCount.find(unread => unread.username === currentUser.username)
   }
 };

@@ -7,7 +7,7 @@ type Conversation {
   author: User!
   plan: Plan
   createdAt: String!
-  unreadCount: [UnreadCount]
+  unreadCount: UnreadCount
 }
 
 type UnreadCount {
