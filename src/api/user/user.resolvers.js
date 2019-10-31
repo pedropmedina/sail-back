@@ -99,7 +99,7 @@ const me = authorize(async (_, __, { models, currentUser }) => {
     { path: 'myPlans' },
     { path: 'inPlans' },
     { path: 'myPins', populate: { path: 'comments' } },
-    { path: 'likedPins' },
+    { path: 'likedPins', populate: { path: 'comments' } },
     { path: 'friends' },
     { path: 'sentRequests', populate: [{ path: 'author' }, { path: 'plan' }] }
   ];
@@ -199,12 +199,6 @@ const deleteUser = authorize(async (_, { userId }, { models }) => {
   }
 });
 
-const likePin = authorize(async (_, { pinId }, { currentUser }) => {
-  currentUser.likes.push(pinId);
-  await currentUser.save();
-  return true;
-});
-
 const logoutUser = (_, __, { res }) => {
   res.clearCookie('refresh-token', { path: '/' });
   return true;
@@ -221,7 +215,6 @@ module.exports = {
     loginUser,
     logoutUser,
     updateUser,
-    deleteUser,
-    likePin
+    deleteUser
   }
 };

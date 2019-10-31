@@ -3,14 +3,20 @@ const authorize = require('../../utils/authorize');
 const search = authorize(async (_, { searchText }, { models }) => {
   const plans = models.Plan.find({ $text: { $search: searchText } })
     .populate({ path: 'location', populate: { path: 'comments' } })
-    .populate('chat')
-    .populate('participants')
+    .populate({
+      path: 'chat',
+      populate: [
+        { path: 'author' },
+        { path: 'messages', populate: 'author' },
+        { path: 'plan' }
+      ]
+    })
     .populate('author')
     .exec();
 
   const pins = models.Pin.find({ $text: { $search: searchText } })
     .populate('author')
-    .populate('comments')
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .exec();
 
   const users = models.User.find({ $text: { $search: searchText } })

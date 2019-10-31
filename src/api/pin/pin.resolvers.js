@@ -82,6 +82,20 @@ const deletePin = authorize(async (_, { pinId }, { models, currentUser }) => {
   return pinDeleted;
 });
 
+const likePin = authorize(async (_, { pinId }, { currentUser }) => {
+  currentUser.likedPins.push(pinId);
+  await currentUser.save();
+  return true;
+});
+
+const unlikePin = authorize(async (_, { pinId }, { currentUser }) => {
+  currentUser.likedPins = currentUser.likedPins.filter(
+    pin => !pin._id.equals(pinId)
+  );
+  await currentUser.save();
+  return true;
+});
+
 module.exports = {
   Query: {
     getPins,
@@ -91,7 +105,9 @@ module.exports = {
   Mutation: {
     createPin,
     updatePin,
-    deletePin
+    deletePin,
+    likePin,
+    unlikePin
   },
   Subscription: {
     pinCreated: {

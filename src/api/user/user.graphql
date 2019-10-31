@@ -55,5 +55,4 @@ extend type Mutation {
   logoutUser: Boolean!
   updateUser(input: UpdateUserInput!): User!
   deleteUser(userId: ID!): User!
-  likePin(pinId: ID!): Boolean!
 }

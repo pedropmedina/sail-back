@@ -40,6 +40,8 @@ type Mutation {
   createPin(input: CreatePinInput!): Pin!
   updatePin(input: UpdatePinInput!): Pin!
   deletePin(pinId: ID!): Pin!
+  likePin(pinId: ID!): Boolean!
+  unlikePin(pinId: ID!): Boolean!
 }
 
 type Subscription {
