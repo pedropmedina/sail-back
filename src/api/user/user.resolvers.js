@@ -67,7 +67,6 @@ const loginUser = async (
       .populate('likedPins')
       .populate('friends')
       .populate({ path: 'sentRequests', populate: { path: 'author' } })
-      .populate({ path: 'receivedRequests', populate: { path: 'author' } })
       .exec();
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
@@ -156,29 +155,30 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
   }
 });
 
-// either current user and admin can update and delete user
-const updateUser = authorize(
-  async (_, { input: { userId, ...update } }, { models }) => {
-    try {
-      const user = await models.User.findByIdAndUpdate(userId, update, {
-        new: true
-      })
-        .populate('myPlans')
-        .populate('inPlans')
-        .populate({
-          path: 'myPins',
-          populate: { path: 'comments' }
-        })
-        .populate('likedpins')
-        .populate('friends')
-        .exec();
-      return user;
-    } catch (error) {
-      console.error('Error while updating user', error);
-      throw error;
+// iterate over input and update currentUser with provided values
+const updateUser = authorize(async (_, { input }, { models, currentUser }) => {
+  try {
+    for (let prop in input) {
+      if (Object.prototype.hasOwnProperty.call(input, prop)) {
+        currentUser[prop] = input[prop];
+      }
     }
+    await currentUser.save();
+
+    const opts = [
+      { path: 'myPlans' },
+      { path: 'inPlans' },
+      { path: 'myPins', populate: { path: 'comments' } },
+      { path: 'likedPins', populate: { path: 'comments' } },
+      { path: 'friends' },
+      { path: 'sentRequests', populate: [{ path: 'author' }, { path: 'plan' }] }
+    ];
+    return await models.User.populate(currentUser, opts);
+  } catch (error) {
+    console.error('Error while updating user', error);
+    throw error;
   }
-);
+});
 
 const deleteUser = authorize(async (_, { userId }, { models }) => {
   try {

@@ -1,8 +1,10 @@
 type User {
   email: String!
   username: String!
-  name: String
+  firstName: String
+  lastName: String
   about: String
+  phone: String
   image: String
   address: Address
   friends: [User]!
@@ -35,12 +37,25 @@ input SignupUserInput {
   password: String!
 }
 
+input AddressInput {
+  longitude: Float!
+  latitude: Float!
+}
+
 input UpdateUserInput {
-  userId: String!
-  name: String
-  username: String
-  password: String
+  firstName: String
+  lastName: String
+  email: String
+  about: String
+  phone: String
   image: String
+  address: AddressInput
+}
+
+input UpdateUserPrivacy {
+  username: String
+  currentPassword: String
+  newPassword: String
 }
 
 extend type Query {

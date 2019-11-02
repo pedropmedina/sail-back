@@ -27,12 +27,14 @@ const userSchema = new Schema(
       required: true,
       minlength: 6
     },
-    name: { type: String },
+    firstName: String,
+    lastName: String,
     about: String,
     address: {
       longitude: Number,
       latitude: Number
     },
+    phone: String,
     image: String,
     myPlans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
     inPlans: [{ type: Schema.Types.ObjectId, ref: 'Plan' }],
