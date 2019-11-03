@@ -69,5 +69,6 @@ extend type Mutation {
   loginUser(input: LoginUserInput!): Auth!
   logoutUser: Boolean!
   updateUser(input: UpdateUserInput!): User!
+  updateUserPrivacy(input: UpdateUserPrivacy!): User!
   deleteUser(userId: ID!): User!
 }

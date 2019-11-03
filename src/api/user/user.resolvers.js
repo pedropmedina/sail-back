@@ -180,6 +180,48 @@ const updateUser = authorize(async (_, { input }, { models, currentUser }) => {
   }
 });
 
+const updateUserPrivacy = authorize(
+  async (_, { input }, { models, currentUser }) => {
+    try {
+      const { username, currentPassword, newPassword } = input;
+      // check if username change was required
+      if (username !== currentUser.username) {
+        const user = await models.User.findOne({ username }).exec();
+        if (user) throw new Error('Username name taken!');
+        currentUser.username = username;
+      }
+
+      if (currentPassword && newPassword) {
+        // validate password
+        const isPasswordValid = await bcrypt.compare(
+          currentPassword,
+          currentUser.password
+        );
+        if (!isPasswordValid) throw new Error('Ivalid password!');
+        const hash = await bcrypt.hash(newPassword, 10);
+        currentUser.password = hash;
+        currentUser.tokenVersion = currentUser.tokenVersion + 1; // increment token version
+      }
+      await currentUser.save();
+
+      const opts = [
+        { path: 'myPlans' },
+        { path: 'inPlans' },
+        { path: 'myPins', populate: { path: 'comments' } },
+        { path: 'likedPins', populate: { path: 'comments' } },
+        { path: 'friends' },
+        {
+          path: 'sentRequests',
+          populate: [{ path: 'author' }, { path: 'plan' }]
+        }
+      ];
+      return await models.User.populate(currentUser, opts);
+    } catch (error) {
+      throw error;
+    }
+  }
+);
+
 const deleteUser = authorize(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
@@ -215,6 +257,7 @@ module.exports = {
     loginUser,
     logoutUser,
     updateUser,
+    updateUserPrivacy,
     deleteUser
   }
 };
