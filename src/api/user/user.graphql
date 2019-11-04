@@ -38,8 +38,8 @@ input SignupUserInput {
 }
 
 input AddressInput {
-  longitude: Float!
-  latitude: Float!
+  longitude: Float
+  latitude: Float
 }
 
 input UpdateUserInput {

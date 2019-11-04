@@ -12,8 +12,8 @@ const planSchema = new Schema(
     description: { type: String, required: true },
     location: { type: Schema.Types.ObjectId, ref: 'Pin', required: true },
     date: { type: Schema.Types.Date, required: true },
-    invites: [{ type: String, required: true }],
-    participants: [{ type: String, required: true }],
+    invites: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
+    participants: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
     chat: { type: Schema.Types.ObjectId, ref: 'Conversation' },
     media: [String],
     private: { type: Boolean, default: false },
@@ -32,14 +32,16 @@ planSchema.pre('remove', async function() {
 });
 
 // push plan's id into author's myPlans and inPlans arrays
-// push author into plan's participants' array
-planSchema.pre('save', async function() {
-  const author = await User.findById(this.author).exec();
-  author.myPlans.push(this._id);
-  author.inPlans.push(this._id);
-  await author.save();
+planSchema.pre('save', async function(next) {
+  if (this.isNew) {
+    const author = await User.findById(this.author).exec();
+    author.myPlans.push(this._id);
+    author.inPlans.push(this._id);
+    await author.save();
 
-  this.participants.push(author.username);
+    this.participants.push(author._id);
+  }
+  next();
 });
 
 const Plan = mongoose.model('Plan', planSchema);

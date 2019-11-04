@@ -9,11 +9,12 @@ const CONVERSATION_CREATED = 'CONVERSATION_CREATED';
 const getConversations = authorize(async (_, __, { models, currentUser }) => {
   try {
     const conversations = await models.Conversation.find({
-      participants: { $in: [currentUser.username] }
+      participants: { $in: [currentUser._id] }
     })
       .populate({ path: 'messages', populate: [{ path: 'author' }] })
       .populate('author')
       .populate('plan')
+      .populate('participants')
       .exec();
 
     return conversations;
@@ -29,7 +30,9 @@ const getConversation = authorize(async (_, { conversationId }, { models }) => {
       .populate({ path: 'messages', populate: [{ path: 'author' }] })
       .populate('author')
       .populate('plan')
+      .populate('participants')
       .exec();
+
     return conversation;
   } catch (error) {
     console.error('Error while getting conversation', error);
@@ -41,11 +44,23 @@ const createConversation = authorize(
   async (_, { input }, { models, currentUser }) => {
     try {
       const { participants, message } = input;
+
+      // find all user's id for each participant in the conversation
+      const aggregation = await models.User.aggregate([
+        { $match: { username: { $in: participants } } },
+        { $group: { _id: null, array: { $push: '$_id' } } },
+        { $project: { array: true, _id: false } }
+      ]);
+      const participantsId = [...aggregation[0]['array'], currentUser._id];
+
       // instantiate new conversation
       let conversation = new models.Conversation({
-        participants: [...participants, currentUser.username],
+        participants: participantsId,
         author: currentUser._id
       });
+
+      // set unread count for existing participants
+      conversation.setUnreadCount(participantsId);
 
       // check if message send in input and create new message for conversation
       if (message) {
@@ -62,7 +77,8 @@ const createConversation = authorize(
       const opts = [
         { path: 'messages', populate: 'author' },
         { path: 'author', populate: 'pins' },
-        { path: 'plan' }
+        { path: 'plan' },
+        { path: 'participants' }
       ];
       conversation = await models.Conversation.populate(conversation, opts);
       // publish new conversation
@@ -117,29 +133,13 @@ const updateConversationUnreadCount = authorize(
     const opts = [
       { path: 'messages', populate: 'author' },
       { path: 'author', populate: 'pins' },
-      { path: 'plan' }
+      { path: 'plan' },
+      { path: 'participants' }
     ];
 
     return await models.Conversation.populate(conversation, opts);
   }
 );
-
-// const getTotalUnreadCount = authorize(
-//   async (_, __, { models, currentUser }) => {
-//     const arr = await models.Conversation.aggregate([
-//       { $match: { participants: { $in: [currentUser.username] } } },
-//       { $unwind: '$unreadCount' },
-//       {
-//         $group: {
-//           _id: '$unreadCount.username',
-//           totalCount: { $sum: '$unreadCount.count' }
-//         }
-//       },
-//       { $match: { _id: currentUser.username}}
-//     ]).exec();
-//     return arr[0]
-//   }
-// );
 
 module.exports = {
   Query: {
@@ -157,12 +157,7 @@ module.exports = {
     }
   },
   Conversation: {
-    participants: async (root, _, { models }) => {
-      return await models.User.find({
-        username: { $in: root.participants }
-      }).exec();
-    },
     unreadCount: (root, __, { currentUser }) =>
-      root.unreadCount.find(unread => unread.username === currentUser.username)
+      root.unreadCount.find(unread => unread.userId.equals(currentUser._id))
   }
 };

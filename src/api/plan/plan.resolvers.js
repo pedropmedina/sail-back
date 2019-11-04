@@ -10,9 +10,12 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
         populate: [
           { path: 'author' },
           { path: 'messages', populate: 'author' },
-          { path: 'plan' }
+          { path: 'plan' },
+          { path: 'participants' }
         ]
       })
+      .populate('participants')
+      .populate('invites')
       .populate('author')
       .exec();
     return plan;
@@ -25,7 +28,7 @@ const getPlan = authorize(async (_, { planId }, { models }) => {
 const getPlans = authorize(async (_, __, { models, currentUser }) => {
   try {
     const plans = await models.Plan.find({
-      participants: { $in: [currentUser.username] }
+      participants: { $in: [currentUser._id] }
     })
       .populate({ path: 'location', populate: { path: 'comments' } })
       .populate({
@@ -33,9 +36,12 @@ const getPlans = authorize(async (_, __, { models, currentUser }) => {
         populate: [
           { path: 'author' },
           { path: 'messages', populate: 'author' },
-          { path: 'plan' }
+          { path: 'plan' },
+          { path: 'participants' }
         ]
       })
+      .populate('participants')
+      .populate('invites')
       .populate('author')
       .exec();
     return plans;
@@ -46,23 +52,37 @@ const getPlans = authorize(async (_, __, { models, currentUser }) => {
 
 const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
   try {
+    const { invites } = input;
+
+    // find all user's id for each invite
+    const aggregation = await models.User.aggregate([
+      { $match: { username: { $in: invites } } },
+      { $group: { _id: null, array: { $push: '$_id' } } },
+      { $project: { array: true, _id: false } }
+    ]);
+    const invitesIds = aggregation[0]['array'];
+
     // create new plan with chat's id
     const plan = new models.Plan({
       ...input,
+      invites: invitesIds,
       author: currentUser._id
     });
 
     // create corresponding chat
     const chat = await new models.Conversation({
       author: currentUser._id,
-      participants: [currentUser.username],
+      participants: [currentUser._id],
       plan: plan._id
     });
+
+    // set unreadCount
+    chat.setUnreadCount([currentUser._id]);
 
     // create welcome message
     const message = await new models.Message({
       conversation: chat._id,
-      content: "Let's get together!",
+      content: 'Hi guys!',
       author: currentUser._id
     }).save();
 
@@ -80,9 +100,12 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
         populate: [
           { path: 'author' },
           { path: 'messages', populate: 'author' },
-          { path: 'plan' }
+          { path: 'plan' },
+          { path: 'participants' }
         ]
       },
+      { path: 'participants' },
+      { path: 'invites' },
       { path: 'author' }
     ];
     return await models.Plan.populate(plan, opts);
@@ -102,9 +125,12 @@ const updatePlan = authorize(async (_, { input }, { models }) => {
         populate: [
           { path: 'author' },
           { path: 'messages', populate: 'author' },
-          { path: 'plan' }
+          { path: 'plan' },
+          { path: 'participants' }
         ]
       })
+      .populate('participants')
+      .populate('invites')
       .populate('author')
       .exec();
     return plan;
@@ -142,13 +168,5 @@ module.exports = {
     createPlan,
     updatePlan,
     deletePlan
-  },
-  Plan: {
-    invites: (root, _, { models }) => {
-      return models.User.find({ username: { $in: root.invites } }).exec();
-    },
-    participants: (root, _, { models }) => {
-      return models.User.find({ username: { $in: root.participants } }).exec();
-    }
   }
 };

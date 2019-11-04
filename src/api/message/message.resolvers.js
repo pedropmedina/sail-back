@@ -41,9 +41,10 @@ const createMessage = authorize(
         input.conversation
       ).exec();
 
-      const isParticipant = conversation.participants.some(
-        username => username === currentUser.username
+      const isParticipant = conversation.participants.some(id =>
+        id.equals(currentUser._id)
       );
+
       if (!isParticipant) {
         throw new ApolloError('Must be a participant!');
       }
@@ -58,7 +59,7 @@ const createMessage = authorize(
       conversation.messages.push(message._id);
       // increment unreadCount in conversation for each user, but the author of message
       conversation.unreadCount.forEach(
-        each => each.username !== currentUser.username && each.count++
+        each => !each.userId.equals(currentUser._id) && each.count++
       );
 
       conversation = await conversation.save();
@@ -67,7 +68,8 @@ const createMessage = authorize(
       const opts = [
         { path: 'messages', populate: 'author' },
         { path: 'author', populate: 'pins' },
-        { path: 'plan' }
+        { path: 'plan' },
+        { path: 'participants' }
       ];
       conversation = await models.Conversation.populate(conversation, opts);
 
@@ -121,8 +123,8 @@ module.exports = {
         () => pubSub.asyncIterator(MESSAGE_CREATED),
         (payload, { conversationId }, { currentUser }) => {
           const conversation = payload.messageCreated;
-          const isParticipant = conversation.participants.some(
-            username => username === currentUser.username
+          const isParticipant = conversation.participants.some(id =>
+            id.equals(currentUser._id)
           );
           return conversationId
             ? conversation._id.equals(conversationId) && isParticipant

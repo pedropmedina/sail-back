@@ -58,15 +58,36 @@ const loginUser = async (
     const user = await models.User.findOne({
       $or: [{ username }, { email: username }]
     })
-      .populate('myPlans')
-      .populate('inPlans')
+      .populate({
+        path: 'myPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
+      .populate({
+        path: 'inPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
       .populate({
         path: 'pins',
         populate: { path: 'comments' }
       })
       .populate('likedPins')
       .populate('friends')
-      .populate({ path: 'sentRequests', populate: { path: 'author' } })
+      .populate({
+        path: 'sentRequests',
+        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
+      })
       .exec();
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
@@ -95,12 +116,33 @@ const loginUser = async (
 // access current user's info
 const me = authorize(async (_, __, { models, currentUser }) => {
   const opts = [
-    { path: 'myPlans' },
-    { path: 'inPlans' },
+    {
+      path: 'myPlans',
+      populate: [
+        { path: 'location' },
+        { path: 'participants' },
+        { path: 'invites' },
+        { path: 'chat' },
+        { path: 'author' }
+      ]
+    },
+    {
+      path: 'inPlans',
+      populate: [
+        { path: 'location' },
+        { path: 'participants' },
+        { path: 'invites' },
+        { path: 'chat' },
+        { path: 'author' }
+      ]
+    },
     { path: 'myPins', populate: { path: 'comments' } },
     { path: 'likedPins', populate: { path: 'comments' } },
     { path: 'friends' },
-    { path: 'sentRequests', populate: [{ path: 'author' }, { path: 'plan' }] }
+    {
+      path: 'sentRequests',
+      populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
+    }
   ];
   return await models.User.populate(currentUser, opts);
 });
@@ -109,10 +151,25 @@ const me = authorize(async (_, __, { models, currentUser }) => {
 const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
     const users = await models.User.find({})
-      .populate('myPlans')
+      .populate({
+        path: 'myPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
       .populate({
         path: 'inPlans',
-        populate: [{ path: 'location' }]
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
       })
       .populate({
         path: 'myPins',
@@ -120,6 +177,10 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
       })
       .populate('likedpins')
       .populate('friends')
+      .populate({
+        path: 'sentRequestsd',
+        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
+      })
       .exec();
     return users;
   } catch (error) {
@@ -132,10 +193,30 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
     const user = await models.User.findOne({
       $or: [{ _id: userId }, { username }]
     })
+      .populate({
+        path: 'myPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
+      .populate({
+        path: 'inPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
       .populate('myPlans')
       .populate({
         path: 'inPlans',
-        populate: [{ path: 'location' }]
+        populate: [{ path: 'location' }, { path: 'participants' }]
       })
       .populate({
         path: 'myPins',
@@ -144,8 +225,8 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
       .populate('likedpins')
       .populate('friends')
       .populate({
-        path: 'sentRequests',
-        populate: 'author'
+        path: 'sentRequestsd',
+        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
       })
       .exec();
     return user;
@@ -160,18 +241,41 @@ const updateUser = authorize(async (_, { input }, { models, currentUser }) => {
   try {
     for (let prop in input) {
       if (Object.prototype.hasOwnProperty.call(input, prop)) {
-        currentUser[prop] = input[prop];
+        if (input[prop]) {
+          currentUser[prop] = input[prop];
+        }
       }
     }
     await currentUser.save();
 
     const opts = [
-      { path: 'myPlans' },
-      { path: 'inPlans' },
+      {
+        path: 'myPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      },
+      {
+        path: 'inPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      },
       { path: 'myPins', populate: { path: 'comments' } },
       { path: 'likedPins', populate: { path: 'comments' } },
       { path: 'friends' },
-      { path: 'sentRequests', populate: [{ path: 'author' }, { path: 'plan' }] }
+      {
+        path: 'sentRequests',
+        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
+      }
     ];
     return await models.User.populate(currentUser, opts);
   } catch (error) {
@@ -206,13 +310,31 @@ const updateUserPrivacy = authorize(
 
       const opts = [
         { path: 'myPlans' },
-        { path: 'inPlans' },
-        { path: 'myPins', populate: { path: 'comments' } },
+        {
+          path: 'inPlans',
+          populate: [
+            { path: 'location' },
+            { path: 'participants' },
+            { path: 'invites' },
+            { path: 'chat' },
+            { path: 'author' }
+          ]
+        },
+        {
+          path: 'inPlans',
+          populate: [
+            { path: 'location' },
+            { path: 'participants' },
+            { path: 'invites' },
+            { path: 'chat' },
+            { path: 'author' }
+          ]
+        },
         { path: 'likedPins', populate: { path: 'comments' } },
         { path: 'friends' },
         {
           path: 'sentRequests',
-          populate: [{ path: 'author' }, { path: 'plan' }]
+          populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
         }
       ];
       return await models.User.populate(currentUser, opts);
@@ -225,14 +347,36 @@ const updateUserPrivacy = authorize(
 const deleteUser = authorize(async (_, { userId }, { models }) => {
   try {
     const user = await models.User.findById(userId)
-      .populate('myPlans')
-      .populate('inPlans')
+      .populate({
+        path: 'inPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
+      .populate({
+        path: 'myPlans',
+        populate: [
+          { path: 'location' },
+          { path: 'participants' },
+          { path: 'invites' },
+          { path: 'chat' },
+          { path: 'author' }
+        ]
+      })
       .populate({
         path: 'myPins',
         populate: { path: 'comments' }
       })
       .populate('likedpins')
       .populate('friends')
+      .populate({
+        path: 'sentRequestsd',
+        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
+      })
       .exec();
     await user.remove();
     return user;

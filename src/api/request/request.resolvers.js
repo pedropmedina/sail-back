@@ -12,7 +12,7 @@ const REQUEST_DELETED = 'REQUEST_DELETED';
 
 const _hasSentReq = (reqs, to, reqType, cb) => {
   return reqs.some(req => {
-    const condition = req.to === to && req.reqType === reqType;
+    const condition = req.to.equals(to) && req.reqType === reqType;
     return cb && typeof cb === 'function' && condition ? cb(req) : condition;
   });
 };
@@ -24,7 +24,7 @@ const _checkForExistingFriendReq = async (input, currentUser, models) => {
     .exec();
 
   // check if either user has already sent request
-  const hasReq1 = _hasSentReq(fromUser.sentRequests, toUser.username, 'FRIEND');
+  const hasReq1 = _hasSentReq(fromUser.sentRequests, toUser._id, 'FRIEND');
   const hasReq2 = _hasSentReq(toUser.sentRequests, fromUser._id, 'FRIEND');
 
   // check if they're alredy friends
@@ -58,13 +58,13 @@ const _checkForExistingInviteReq = async (input, currentUser, models) => {
 
   const hasReq1 = _hasSentReq(
     fromUser.sentRequests,
-    toUser.username,
+    toUser._id,
     'INVITE',
     req => req.plan.equals(input.plan)
   );
   const hasReq2 = _hasSentReq(
     toUser.sentRequests,
-    fromUser.username,
+    fromUser._id,
     'INVITE',
     req => req.plan.equals(input.plan)
   );
@@ -81,30 +81,34 @@ const sendDataToCorrenspondingParties = (name, payload, context) => {
   const { currentUser } = context;
   const req = payload[name];
   return (
-    req.to === currentUser.username || req.author._id.equals(currentUser._id)
+    req.to.equals(currentUser._id) || req.author._id.equals(currentUser._id)
   );
 };
 
 const getRequests = authorize(
   async (_, { reqType }, { models, currentUser }) => {
     try {
-      const { _id, username } = currentUser;
       let requests;
 
       switch (reqType) {
         case 'FRIEND':
         case 'INVITE':
           requests = await models.Request.find({
-            $and: [{ reqType }, { $or: [{ author: _id }, { to: username }] }]
+            $and: [
+              { reqType },
+              { $or: [{ author: currentUser._id }, { to: currentUser._id }] }
+            ]
           })
             .populate('author')
+            .populate('to')
             .exec();
           break;
         default:
           requests = await models.Request.find({
-            $or: [{ author: _id }, { to: username }]
+            $or: [{ author: currentUser._id }, { to: currentUser._id }]
           })
             .populate('author')
+            .populate('to')
             .exec();
           break;
       }
@@ -120,6 +124,7 @@ const getRequest = authorize(async (_, { reqId }, { models }) => {
   try {
     return await models.Request.findById(reqId)
       .populate('author')
+      .populate('to')
       .exec();
   } catch (error) {
     console.error('Error while getting invite ', error);
@@ -141,9 +146,13 @@ const createRequest = authorize(
           throw new ApolloError('Invalid request type!');
       }
 
+      // find to user to update req.to to its _id
+      const toUser = await models.User.findOne({ username: input.to }).exec();
+
       // instantiate request model and save
       const req = await new models.Request({
         ...input,
+        to: toUser._id,
         author: currentUser._id
       }).save();
       // push req in author's sentRequests array
@@ -151,7 +160,7 @@ const createRequest = authorize(
       await currentUser.save();
 
       // return req with populated author
-      const populatePaths = [{ path: 'author' }];
+      const populatePaths = [{ path: 'author' }, { path: 'to' }];
       const requestCreated = await models.Request.populate(req, populatePaths);
       // publish new request
       pubsub.publish(REQUEST_CREATED, { requestCreated });
@@ -173,10 +182,11 @@ const updateRequest = authorize(
       // find the request that needs to be updated
       let req = await models.Request.findById(reqId)
         .populate('author')
+        .populate('to')
         .exec();
 
       // update users and plan documents given the request type
-      if (currentUser.username === req.to) {
+      if (currentUser._id.equals(req.to._id)) {
         req.status = status;
         if (req.reqType === 'FRIEND') {
           if (req.status === 'ACCEPTED') {
@@ -192,13 +202,13 @@ const updateRequest = authorize(
         } else if (req.reqType === 'INVITE') {
           if (req.status === 'ACCEPTED') {
             const plan = await models.Plan.findByIdAndUpdate(req.plan, {
-              $push: { participants: currentUser.username },
-              $pull: { invites: currentUser.username }
+              $push: { participants: currentUser._id },
+              $pull: { invites: currentUser._id }
             }).exec();
             await models.Conversation.findByIdAndUpdate(plan.chat, {
               $push: {
-                participants: currentUser.username,
-                unreadCount: { username: currentUser.username }
+                participants: currentUser._id,
+                unreadCount: { userId: currentUser._id }
               }
             });
             await currentUser
@@ -209,7 +219,6 @@ const updateRequest = authorize(
           }
         }
         req = await req.save();
-        req = await models.Request.populate(req, [{ path: 'author' }]);
       }
       pubsub.publish(REQUEST_UPDATED, { requestUpdated: req });
       return req;
@@ -229,6 +238,7 @@ const deleteRequest = authorize(
         author: currentUser._id
       })
         .populate('author')
+        .populate('to')
         .exec();
 
       if (!req) {
@@ -302,20 +312,12 @@ module.exports = {
       }
     }
   },
-  FriendRequest: {
-    to: async (root, _, { models }) => {
-      return await models.User.findOne({ username: root.to }).exec();
-    }
-  },
   InviteRequest: {
     plan: async ({ plan, reqType }, _, { models }) => {
       if (reqType === 'INVITE') {
         const p = await models.Plan.findById(plan).exec();
         return p;
       }
-    },
-    to: async (root, _, { models }) => {
-      return await models.User.findOne({ username: root.to }).exec();
     }
   }
 };

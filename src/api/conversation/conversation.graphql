@@ -12,7 +12,6 @@ type Conversation {
 
 type UnreadCount {
   _id: ID!
-  username: String!
   count: Int
 }
 

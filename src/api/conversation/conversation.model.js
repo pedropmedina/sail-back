@@ -4,13 +4,15 @@ const Schema = mongoose.Schema;
 const Message = require('../message/message.model');
 
 const unreadCountSchema = new Schema({
-  username: { type: String, required: true },
+  userId: { type: Schema.Types.ObjectId, required: true },
   count: { type: Number, default: 0 }
 });
 
 const conversationSchema = new Schema(
   {
-    participants: [{ type: String, required: true }],
+    participants: [
+      { type: Schema.Types.ObjectId, ref: 'User', required: true }
+    ],
     messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
     author: { type: Schema.Types.ObjectId, ref: 'User' },
     plan: { type: Schema.Types.ObjectId, ref: 'Plan' },
@@ -24,17 +26,14 @@ conversationSchema.pre('remove', async function() {
   return await Message.deleteMany({ conversation: this._id }).exec();
 });
 
-conversationSchema.pre('save', async function(next) {
-  // iterate over participants and prepare unreadCount when conversation is first created
-  if (this.isNew) {
-    const unreadCount = this.participants.reduce((unreadCount, participant) => {
-      unreadCount.push({ username: participant });
-      return unreadCount;
-    }, []);
-    this.unreadCount = unreadCount;
-  }
-  next();
-});
+conversationSchema.methods.setUnreadCount = function(usersId) {
+  const unreadCount = usersId.reduce((unreadCount, userId) => {
+    unreadCount.push({ userId });
+    return unreadCount;
+  }, []);
+  this.unreadCount = unreadCount;
+  return this;
+};
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
 
