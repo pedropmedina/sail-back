@@ -32,7 +32,13 @@ const userSchema = new Schema(
     about: String,
     address: {
       longitude: Number,
-      latitude: Number
+      latitude: Number,
+      name: String,
+      neighborhood: String,
+      place: String,
+      region: String,
+      country: String,
+      postcode: String
     },
     phone: String,
     image: String,

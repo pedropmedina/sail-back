@@ -175,7 +175,7 @@ const getUsers = grantAdminAccess(async (_, __, { models }) => {
         path: 'myPins',
         populate: { path: 'comments' }
       })
-      .populate('likedpins')
+      .populate('likedPins')
       .populate('friends')
       .populate({
         path: 'sentRequestsd',
@@ -222,7 +222,7 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
         path: 'myPins',
         populate: { path: 'comments' }
       })
-      .populate('likedpins')
+      .populate('likedPins')
       .populate('friends')
       .populate({
         path: 'sentRequestsd',
@@ -241,9 +241,7 @@ const updateUser = authorize(async (_, { input }, { models, currentUser }) => {
   try {
     for (let prop in input) {
       if (Object.prototype.hasOwnProperty.call(input, prop)) {
-        if (input[prop]) {
-          currentUser[prop] = input[prop];
-        }
+        currentUser[prop] = input[prop];
       }
     }
     await currentUser.save();
@@ -371,7 +369,7 @@ const deleteUser = authorize(async (_, { userId }, { models }) => {
         path: 'myPins',
         populate: { path: 'comments' }
       })
-      .populate('likedpins')
+      .populate('likedPins')
       .populate('friends')
       .populate({
         path: 'sentRequestsd',

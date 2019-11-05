@@ -20,6 +20,12 @@ type User {
 type Address {
   longitude: Float
   latitude: Float
+  name: String
+  neighborhood: String
+  place: String
+  region: String
+  country: String
+  postcode: String
 }
 
 type Auth {
@@ -40,6 +46,12 @@ input SignupUserInput {
 input AddressInput {
   longitude: Float
   latitude: Float
+  name: String
+  neighborhood: String
+  place: String
+  region: String
+  country: String
+  postcode: String
 }
 
 input UpdateUserInput {
