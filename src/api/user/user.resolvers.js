@@ -7,6 +7,39 @@ const authorize = require('../../utils/authorize');
 const createToken = require('../../utils/createToken');
 const setCookie = require('../../utils/setCookie');
 
+const USER_OPTS = [
+  {
+    path: 'myPlans',
+    populate: [
+      { path: 'location' },
+      { path: 'participants' },
+      { path: 'invites' },
+      { path: 'chat' },
+      { path: 'author' }
+    ]
+  },
+  {
+    path: 'inPlans',
+    populate: [
+      { path: 'location' },
+      { path: 'participants' },
+      { path: 'invites' },
+      { path: 'chat' },
+      { path: 'author' }
+    ]
+  },
+  { path: 'myPins', populate: { path: 'comments' } },
+  { path: 'likedPins', populate: { path: 'comments' } },
+  {
+    path: 'friends',
+    populate: [{ path: 'friends' }, { path: 'sentRequests' }]
+  },
+  {
+    path: 'sentRequests',
+    populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
+  }
+];
+
 // sign up new user
 const signupUser = async (
   _,
@@ -57,38 +90,7 @@ const loginUser = async (
     // check for user in db
     const user = await models.User.findOne({
       $or: [{ username }, { email: username }]
-    })
-      .populate({
-        path: 'myPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'inPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'pins',
-        populate: { path: 'comments' }
-      })
-      .populate('likedPins')
-      .populate('friends')
-      .populate({
-        path: 'sentRequests',
-        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-      })
-      .exec();
+    });
     if (!user) throw new AuthenticationError('Wrong credentials.');
 
     // validate password
@@ -105,7 +107,7 @@ const loginUser = async (
 
     return {
       token: createToken({ userId: user._id }, 'access'),
-      user
+      user: await models.User.populate(user, USER_OPTS)
     };
   } catch (error) {
     console.error('Error while logging user: ', error.message);
@@ -115,74 +117,14 @@ const loginUser = async (
 
 // access current user's info
 const me = authorize(async (_, __, { models, currentUser }) => {
-  const opts = [
-    {
-      path: 'myPlans',
-      populate: [
-        { path: 'location' },
-        { path: 'participants' },
-        { path: 'invites' },
-        { path: 'chat' },
-        { path: 'author' }
-      ]
-    },
-    {
-      path: 'inPlans',
-      populate: [
-        { path: 'location' },
-        { path: 'participants' },
-        { path: 'invites' },
-        { path: 'chat' },
-        { path: 'author' }
-      ]
-    },
-    { path: 'myPins', populate: { path: 'comments' } },
-    { path: 'likedPins', populate: { path: 'comments' } },
-    { path: 'friends' },
-    {
-      path: 'sentRequests',
-      populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-    }
-  ];
-  return await models.User.populate(currentUser, opts);
+  return await models.User.populate(currentUser, USER_OPTS);
 });
 
 // allow admins to access users' info
 const getUsers = grantAdminAccess(async (_, __, { models }) => {
   try {
-    const users = await models.User.find({})
-      .populate({
-        path: 'myPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'inPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'myPins',
-        populate: { path: 'comments' }
-      })
-      .populate('likedPins')
-      .populate('friends')
-      .populate({
-        path: 'sentRequestsd',
-        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-      })
-      .exec();
-    return users;
+    const users = await models.User.find({}).exec();
+    return await models.User.populate(users, USER_OPTS);
   } catch (error) {
     console.error('Error while getting users', error);
   }
@@ -192,44 +134,8 @@ const getUser = authorize(async (_, { userId, username }, { models }) => {
   try {
     const user = await models.User.findOne({
       $or: [{ _id: userId }, { username }]
-    })
-      .populate({
-        path: 'myPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'inPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate('myPlans')
-      .populate({
-        path: 'inPlans',
-        populate: [{ path: 'location' }, { path: 'participants' }]
-      })
-      .populate({
-        path: 'myPins',
-        populate: { path: 'comments' }
-      })
-      .populate('likedPins')
-      .populate('friends')
-      .populate({
-        path: 'sentRequestsd',
-        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-      })
-      .exec();
-    return user;
+    }).exec();
+    return await models.User.populate(user, USER_OPTS);
   } catch (error) {
     console.error('Error while getting user', error);
     return error;
@@ -245,37 +151,7 @@ const updateUser = authorize(async (_, { input }, { models, currentUser }) => {
       }
     }
     await currentUser.save();
-
-    const opts = [
-      {
-        path: 'myPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      },
-      {
-        path: 'inPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      },
-      { path: 'myPins', populate: { path: 'comments' } },
-      { path: 'likedPins', populate: { path: 'comments' } },
-      { path: 'friends' },
-      {
-        path: 'sentRequests',
-        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-      }
-    ];
-    return await models.User.populate(currentUser, opts);
+    return await models.User.populate(currentUser, USER_OPTS);
   } catch (error) {
     console.error('Error while updating user', error);
     throw error;
@@ -292,7 +168,6 @@ const updateUserPrivacy = authorize(
         if (user) throw new Error('Username name taken!');
         currentUser.username = username;
       }
-
       if (currentPassword && newPassword) {
         // validate password
         const isPasswordValid = await bcrypt.compare(
@@ -306,36 +181,7 @@ const updateUserPrivacy = authorize(
       }
       await currentUser.save();
 
-      const opts = [
-        { path: 'myPlans' },
-        {
-          path: 'inPlans',
-          populate: [
-            { path: 'location' },
-            { path: 'participants' },
-            { path: 'invites' },
-            { path: 'chat' },
-            { path: 'author' }
-          ]
-        },
-        {
-          path: 'inPlans',
-          populate: [
-            { path: 'location' },
-            { path: 'participants' },
-            { path: 'invites' },
-            { path: 'chat' },
-            { path: 'author' }
-          ]
-        },
-        { path: 'likedPins', populate: { path: 'comments' } },
-        { path: 'friends' },
-        {
-          path: 'sentRequests',
-          populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-        }
-      ];
-      return await models.User.populate(currentUser, opts);
+      return await models.User.populate(currentUser, USER_OPTS);
     } catch (error) {
       throw error;
     }
@@ -344,40 +190,10 @@ const updateUserPrivacy = authorize(
 
 const deleteUser = authorize(async (_, { userId }, { models }) => {
   try {
-    const user = await models.User.findById(userId)
-      .populate({
-        path: 'inPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'myPlans',
-        populate: [
-          { path: 'location' },
-          { path: 'participants' },
-          { path: 'invites' },
-          { path: 'chat' },
-          { path: 'author' }
-        ]
-      })
-      .populate({
-        path: 'myPins',
-        populate: { path: 'comments' }
-      })
-      .populate('likedPins')
-      .populate('friends')
-      .populate({
-        path: 'sentRequestsd',
-        populate: [{ path: 'author' }, { path: 'to' }, { path: 'plan' }]
-      })
-      .exec();
+    const user = await models.User.findById(userId).exec();
     await user.remove();
-    return user;
+
+    return await models.User.populate(user, USER_OPTS);
   } catch (error) {
     console.error('Error while deleting user', error);
   }
@@ -401,5 +217,14 @@ module.exports = {
     updateUser,
     updateUserPrivacy,
     deleteUser
+  },
+  User: {
+    fullName: root => {
+      const { firstName, lastName, username } = root;
+      const option1 = firstName && lastName && firstName + ' ' + lastName;
+      const option2 = firstName;
+      const option3 = username;
+      return option1 ? option1 : option2 ? option2 : option3;
+    }
   }
 };
