@@ -75,7 +75,11 @@ app.post('/refresh_token', async (req, res) => {
 });
 
 // instantiate server and pass in config object with typeDefs, resolvers, and ctx
-const server = new ApolloServer(apiConfig);
+const server = new ApolloServer({
+  ...apiConfig,
+  introspection: true,
+  playground: true
+});
 
 // apply express app with options to apollo server
 server.applyMiddleware({
