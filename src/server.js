@@ -15,6 +15,9 @@ const createToken = require('./utils/createToken');
 const getCookie = require('./utils/getCookie');
 const setCookie = require('./utils/setCookie');
 
+// port in use
+const port = process.env.PORT || 4000;
+
 // graphql config object
 const apiConfig = require('./api');
 
@@ -84,8 +87,8 @@ const httpServer = createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
 // prettier-ignore
-httpServer.listen({ port: 4000 }, () => {
-  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
-  console.log(`🚀 Subscriptions ready at http://localhost:4000${server.subscriptionsPath}`
+httpServer.listen({ port }, () => {
+  console.log(`🚀 Server - port: ${port}, endpoint: ${server.graphqlPath}`);
+  console.log(`🚀 Subscriptions - port: ${port}, endpoint: ${server.subscriptionsPath}`
   );
 });
