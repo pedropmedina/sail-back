@@ -156,8 +156,8 @@ module.exports = {
       subscribe: withFilter(
         () => pubSub.asyncIterator(CONVERSATION_CREATED),
         (payload, _, { currentUser }) => {
-          const isParticipant = payload.participants.some(id =>
-            id.equals(currentUser._id)
+          const isParticipant = payload.conversationCreated.participants.some(
+            id => id.equals(currentUser._id)
           );
           return isParticipant;
         }

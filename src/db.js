@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sail';
+
 const db = mongoose
-  .connect(process.env.MONGODB_URI, {
+  .connect(MONGODB_URI, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false
