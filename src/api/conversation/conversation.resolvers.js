@@ -1,4 +1,4 @@
-const { PubSub } = require('apollo-server');
+const { PubSub, withFilter } = require('apollo-server');
 const grantAdminAccess = require('../../utils/grantAdminAccess');
 const authorize = require('../../utils/authorize');
 
@@ -153,7 +153,15 @@ module.exports = {
   },
   Subscription: {
     conversationCreated: {
-      subscribe: () => pubSub.asyncIterator(CONVERSATION_CREATED)
+      subscribe: withFilter(
+        () => pubSub.asyncIterator(CONVERSATION_CREATED),
+        (payload, _, { currentUser }) => {
+          const isParticipant = payload.participants.some(id =>
+            id.equals(currentUser._id)
+          );
+          return isParticipant;
+        }
+      )
     }
   },
   Conversation: {
