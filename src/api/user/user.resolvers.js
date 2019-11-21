@@ -28,8 +28,8 @@ const USER_OPTS = [
       { path: 'author' }
     ]
   },
-  { path: 'myPins', populate: { path: 'comments' } },
-  { path: 'likedPins', populate: { path: 'comments' } },
+  { path: 'myPins', populate: { path: 'comments', populate: 'author' } },
+  { path: 'likedPins', populate: { path: 'comments', populate: 'author' } },
   {
     path: 'friends',
     populate: [{ path: 'friends' }, { path: 'sentRequests' }]
