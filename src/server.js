@@ -69,7 +69,7 @@ app.post('/refresh_token', async (req, res) => {
   const cookieOptions = {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
+    secure: true,
     sameSite: 'None'
   };
   setCookie(res, 'refresh-token', newRefreshToken, cookieOptions);
