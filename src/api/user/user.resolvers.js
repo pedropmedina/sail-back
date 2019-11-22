@@ -67,8 +67,13 @@ const signupUser = async (
       { userId: user._id, tokenVersion: user.tokenVersion },
       'refresh'
     );
-    const cookiesOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
-    setCookie(res, 'refresh-token', refreshToken, cookiesOptions);
+    const cookieOptions = {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: false,
+      sameSite: 'None'
+    };
+    setCookie(res, 'refresh-token', refreshToken, cookieOptions);
 
     return {
       token: createToken({ userId: user._id }, 'access'),
@@ -102,8 +107,13 @@ const loginUser = async (
       { userId: user._id, tokenVersion: user.tokenVersion },
       'refresh'
     );
-    const cookiesOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
-    setCookie(res, 'refresh-token', refreshToken, cookiesOptions);
+    const cookieOptions = {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: false,
+      sameSite: 'None'
+    };
+    setCookie(res, 'refresh-token', refreshToken, cookieOptions);
 
     return {
       token: createToken({ userId: user._id }, 'access'),

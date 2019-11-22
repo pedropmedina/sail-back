@@ -66,7 +66,12 @@ app.post('/refresh_token', async (req, res) => {
     { userId: user._id, tokenVersion: user.tokenVersion },
     'refresh'
   );
-  const cookieOptions = { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true };
+  const cookieOptions = {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: false,
+    sameSite: 'None'
+  };
   setCookie(res, 'refresh-token', newRefreshToken, cookieOptions);
 
   // create new access token and return it to client
