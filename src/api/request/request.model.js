@@ -20,6 +20,14 @@ const requestSchema = new Schema(
   { timestamps: true }
 );
 
+// update author's sentRequests upon removal of request
+requestSchema.pre('remove', async function(next) {
+  const User = this.model('User');
+  return await User.findByIdAndUpdate(this.author, {
+    $pull: { sentRequests: this._id }
+  });
+});
+
 const Request = mongoose.model('Request', requestSchema);
 
 module.exports = Request;

@@ -21,7 +21,11 @@ input CreatePlanInput {
 }
 
 input UpdatePlanInput {
-  _id: ID!
+  planId: ID!
+  title: String
+  description: String
+  location: ID
+  date: String
   invites: [String]
   media: [String]
   private: Boolean

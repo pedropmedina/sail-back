@@ -117,8 +117,10 @@ const createPlan = authorize(async (_, { input }, { models, currentUser }) => {
 
 const updatePlan = authorize(async (_, { input }, { models }) => {
   try {
-    const { _id, ...update } = input;
-    const plan = await models.Plan.findByIdAndUpdate(_id, update, { new: true })
+    const { planId, ...update } = input;
+    const plan = await models.Plan.findByIdAndUpdate(planId, update, {
+      new: true
+    })
       .populate({ path: 'location', populate: 'comments' })
       .populate({
         path: 'chat',
@@ -140,10 +142,10 @@ const updatePlan = authorize(async (_, { input }, { models }) => {
   }
 });
 
-const deletePlan = authorize(async (_, { _id }, { models, currentUser }) => {
+const deletePlan = authorize(async (_, { planId }, { models, currentUser }) => {
   try {
     const plan = await models.Plan.findOne({
-      _id,
+      _id: planId,
       author: currentUser._id
     }).exec();
 
