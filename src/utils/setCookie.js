@@ -5,7 +5,7 @@ const prodOptions = {
   sameSite: 'None'
 };
 
-const devOptions = { ...prodOptions, secure: false };
+const devOptions = { ...prodOptions, secure: false, sameSite: false };
 
 const defaultOptions =
   process.env.NODE_ENV === 'production' ? prodOptions : devOptions;
