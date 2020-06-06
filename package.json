@@ -18,7 +18,7 @@
   "dependencies": {
     "@apollo/federation": "^0.6.8",
     "@apollo/gateway": "^0.6.12",
-    "apollo-server": "^2.7.0-alpha.3",
+    "apollo-server": "^2.14.2",
     "apollo-server-express": "^2.8.2",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.4",
